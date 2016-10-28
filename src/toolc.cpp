@@ -17,80 +17,88 @@
 //Predict surface reconstruction with basin hopping
 //bond order potentials?
 #include <sys/time.h>
-//#include <laprefs.h>
 #include <iostream>
-//#include <omp.h>
 #include "toolc.h"
 #include "ToolCalc.h"
 #include "ToolCalcPP.h"
 #include "ToolCalcLJ.h"
+#include "ToolCalcZE.h"
 #include "ToolIO.h"
 
 using namespace std;
 
-int main() {
-	//Ran myRan(188);
-	cout << "###TOOL++ V1.1, C. Loschen 2008###\n";
+int main(int argc, char *argv[]) {
+
+	timeval t1, t2;
+	gettimeofday(&t1, NULL);
+	cout << "###TOOL++ V2.0, C. Loschen ###\n";
 	ToolIO *newIO = new ToolIO;
 
-	//2x parsen...
-	(*newIO).parseCalctype();
+	const char* setupfile = "SETUP";
+	if (argc > 1) {
+		setupfile = argv[1];
+	}
+
+	newIO->parseCalctype(setupfile);
 	ToolCalc *myECalc;
+
+	//some defaults for pair potentials
 	if (toolc::ctype == "PP") {
 		myECalc = new ToolCalcPP();
-		(*myECalc).maxiter = 300;
-		(*myECalc).ewald_thresh = 0.01;
-		(*myECalc).threshhold = 0.01;
-		(*myECalc).max_displacement = 0.5;
-		(*myECalc).step = 0.1;
-		(*myECalc).cutoff = 35;
-		(*myECalc).dipole_cor = true;
+		myECalc->maxiter = 300;
+		myECalc->ewald_thresh = 0.01;
+		myECalc->threshhold = 0.01;
+		myECalc->max_displacement = 0.5;
+		myECalc->step = 0.1;
+		myECalc->cutoff = 35;
+		myECalc->dipole_cor = true;
+	} else if (toolc::ctype == "ZERNICKE") {
+		myECalc = new ToolCalcZE();
 
 	} else {
 		myECalc = new ToolCalcLJ;
 		//(*myECalc).max_displacement = 0.1;
-		(*myECalc).step = 0.002;
+		myECalc->step = 0.002;
 	}
-	(*newIO).parseSETUP(*myECalc);
+	//read geometry
+	newIO->parseSETUP(*myECalc, setupfile);
+	Ran myRan((*myECalc).rseed);
 
 	if (toolc::ctype == "PP") {
-		(*myECalc).setDipole(true);
+		myECalc->setDipole(true);
+		myECalc->setUP_periodic((*myECalc).periodic, false, true);
+		myECalc->moveRandom(myRan, .5);
+		myECalc->basin_hopping(myRan, 0.5, false);
+		myECalc->opt((*myECalc).shell_modell, true);
+		//(*myECalc).periodic = true;
+		//(*myECalc).E_periodic((*myECalc).shell_modell,true,true);
+	} else if (toolc::ctype == "LJ") {
+		myECalc->moveRandom(myRan, .5);
+		myECalc->basin_hopping(myRan, 0.5, false);
+		//(*myECalc).monte_carlo_sampling(myRan, 2);
+	} else if (toolc::ctype == "ZERNICKE") {
+		ToolCalcZE* zeCalc = dynamic_cast<ToolCalcZE*>(myECalc);
+		zeCalc->printSegments();
+		zeCalc->seg2grid(16,16,16,true);
+
+		//(*newIO).gridout((*myECalc).genom,(*myECalc).gridp);
+
+		//(*myECalc).grid2genom(true);
+		//
+		//
+		//(*myECalc).orderOx();
+
+		//(*newIO).genomout((*myECalc).energy,(*myECalc).genom_compressed,(*myECalc).atnumber);
+		//(*myECalc).grid2xyz(true);
 	}
-	Ran myRan((*myECalc).rseed);
-	//new better timing
-	timeval t1, t2;
-	gettimeofday(&t1, NULL);
-//	timespec res, start, stop;
-//	clock_getres(CLOCK_REALTIME, &res);
-//	clock_gettime(CLOCK_REALTIME, &start);
-	//#############################
 
-	//######Global OPT##########
-
-	(*myECalc).moveRandom(myRan, .5);
-
-	//(*myECalc).periodic = true;
-	(*myECalc).setUP_periodic((*myECalc).periodic, false, true);
-	//(*myECalc).E_periodic((*myECalc).shell_modell,true,true);
 	//(*newIO).fractoFile((*myECalc), false, true);
 	//(*newIO).printMol((*myECalc),(*myECalc).shell_modell);
 	//WARNING IF FROZEN ATOMS
-	//(*myECalc).xyz2grid(16,16,16,true);
-	//(*newIO).gridout((*myECalc).genom,(*myECalc).gridp);
-
-	//(*myECalc).grid2genom(true);
-	//
-	//
-	//(*myECalc).orderOx();
-
-	//(*myECalc).monte_carlo_sampling(myRan, 2);
-	//(*newIO).genomout((*myECalc).energy,(*myECalc).genom_compressed,(*myECalc).atnumber);
-	//(*myECalc).grid2xyz(true);
-	(*myECalc).basin_hopping(myRan, 0.5, false);
 
 	//(*myECalc).shell_modell = false;
 	//(*myECalc).E((*myECalc).shell_modell, true, true);
-	(*myECalc).opt((*myECalc).shell_modell, true);
+
 	//(*myECalc).shell_modell=true;
 
 	//(*myECalc).basin_hopping(myRan, 0.5, false);
@@ -106,15 +114,16 @@ int main() {
 	//(*newIO).printMol((*myECalc),(*myECalc).shell_modell);
 	//(*newIO).printGrad((*myECalc));
 	//(*newIO).fractoFile((*myECalc), false, true);
+	newIO->printParameters(*myECalc);
 	gettimeofday(&t2, NULL);
 	cout << "\n\nTIMING: ";
-	(*newIO).printTiming(t1, t2);
-	(*newIO).printParameters(*myECalc);
+	newIO->printTiming(t1, t2);
+
 	//(*newIO).gridtoFile((*myECalc).energy, (*myECalc).genom, (*myECalc).gridp, false);
 	//(*newIO).printMol((*myECalc), true);
 	//(*newIO).moltoFile((*myECalc));
 	//(*newIO).printGrad((*myECalc));
-	//cout <<ToolCalc::erfc_new(2.0)<< endl;
+
 	delete newIO;
 	delete myECalc;
 }

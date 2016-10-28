@@ -11,13 +11,11 @@
 #include <sys/time.h>
 #include <Eigen/Core>
 
-
 #include "fitlin.h"
 #include "ran.h"
 
 //Calc ---> 	Calc_PP   --> Periodic
-//						  --> periodic
-//				Calc_LJ
+//				Calc_LJ   --> Lennard Jones
 //				...
 
 using namespace std;
@@ -26,74 +24,31 @@ class ToolCalc {
 public:
 	ToolCalc();
 	virtual ~ToolCalc();
-	//does it bring any improvement to place them earlier?
-	typedef Eigen::Matrix<double,1,  Eigen::Dynamic> VectorXd;
+	typedef Eigen::Matrix<double, 1, Eigen::Dynamic> VectorXd;
+	typedef Eigen::Matrix<int, 1, Eigen::Dynamic> VectorXi;
 
 	VectorXd* xyz;
 	VectorXd* grad;
-	//These functions are implemented in inherited classes
-	virtual void E(bool pol = false, bool verbose = false, bool gcalc = true);
-	virtual void E_Pol(bool pol = false, bool verbose = false, bool gcalc =
-			true);
-	virtual void E_periodic(bool pol = false, bool verbose = false, bool gcalc =
-			true);
-	virtual void E_periodic_Pol(bool pol = false, bool verbose = false,
-			bool gcalc = true);
-	void setUP_periodic(bool periodic = true, bool pol = false, bool verbose =
-			false);
-	void append_shells(bool verbose = false);
-	void strip_shells(bool verbose = false);
-	//Variable energy function pointer
-	void(ToolCalc::*p_E)(bool, bool, bool);
-	void moveRandom(Ran &myRan, double scale = 0.5, double zscale = 0.0);
-	void moveRandomPol(Ran &myRan, double scale = 0.5);
-	void createRandom(Ran &myRan, double radius);
-	void xyz2grid(int a, int b, int c, bool verbose=false);
-	void gridout();
-	void grid2genom(bool verbose=false);
-	void genomout();
-	void genom2grid();
-	void grid2xyz(bool verbose=false);
-	void orderOx();
-	void opt(bool pol = false, bool verbose = false);
-	void monte_carlo_sampling(Ran &myRan, double distortion);
-	void basin_hopping(Ran &myRan, double distortion, double verbose);
-	void basin_hopping_par(Ran &myRan, double distortion);
-	void setCOM();
-	void correctGrad();
-	void setDipole(bool);
-	void setXYZ(VectorXd xyz_new);
-	int getInteraction(int type1, int type2);
+	//atoms which can move (=1)
+	VectorXd* moveMat;
 
-	int inline getInteraction_fast(int type1, int type2) {
-		int interact = 0;
-		//Customized version for binary oxides
-		if (type1 != 8 && type2 != 8) {
-			interact=2;
-		} else {
-			interact = 0;
-		}
-		if (type1 == 8 && type2 == 8) {
-					interact=1;
-				}
-		//cout<< " "<<interact<< endl;
-		return interact;
-	}
-	void setcoreshell(bool verbose, bool reset);
+	//stores the cosmo segments
+	VectorXd segments;
+	VectorXi satom;
+	VectorXd scharge;
+	VectorXd sarea;
+	int nseg;
+
 	//properties of calculation
 	int nproc;
 	int atnumber;
 	bool calculated;
 	double energy;
-	//string calctype;
 	//element names
 	string* atoms;
 	//element numbers
 	int* atom_nr;
 	//species/type numbers
-	//int* type;
-
-	//LaVectorDouble* orig_xyz;
 
 	//periodic variables
 	bool periodic;
@@ -109,18 +64,19 @@ public:
 	double af[3];
 	double bf[3];
 	double cf[3];
-	//here stands which atoms can move (=1)
-	VectorXd* moveMat;
+
 	double gradnorm;
 	double gradinfnorm;
 	double cutoff;
 	double threshhold;
 	double max_displacement;
+
 	//step for line search
 	double step;
 	double temperature;
-	double k;//for LJ
-	double COM[3];
+	double k;		//for LJ
+	double COM[3]; //center of mass
+
 	int gradmaxelem;
 	int maxiter;
 	int global_maxiter;
@@ -129,6 +85,7 @@ public:
 	int maxatoms;
 	bool verbose;
 	double rseed;
+
 	//Parameters for pair potentials
 	//species related
 	double* q;
@@ -142,12 +99,13 @@ public:
 	double scutoff;
 	double springc;
 	// interaction terms
-	//dynamische 2D arrays!
+
 	double** paraMat;
 	int** interMat;
 	int nr_species;
 	int interactions;
-	//Optimsation related
+
+	//Optimization related
 	bool converged;
 	static string elements[87];
 	static double emass[87];
@@ -157,10 +115,50 @@ public:
 	int* genom_compressed;
 	int gridp;
 	int gx, gy, gz;
-	//partition function
-	double Qpart;
-	double F;
-	double prob;
+
+	//These functions are implemented in inherited classes
+	virtual void E(bool pol = false, bool verbose = false, bool gcalc = true);
+	virtual void E_Pol(bool pol = false, bool verbose = false,
+			bool gcalc = true);
+	virtual void E_periodic(bool pol = false, bool verbose = false, bool gcalc =
+			true);
+	virtual void E_periodic_Pol(bool pol = false, bool verbose = false,
+			bool gcalc = true);
+	void setUP_periodic(bool periodic = true, bool pol = false, bool verbose =
+			false);
+	void append_shells(bool verbose = false);
+	void strip_shells(bool verbose = false);
+	//Variable energy function pointer
+	void (ToolCalc::*p_E)(bool, bool, bool);
+	void moveRandom(Ran &myRan, double scale = 0.5, double zscale = 0.0);
+	void moveRandomPol(Ran &myRan, double scale = 0.5);
+	void createRandom(Ran &myRan, double radius);
+
+	void opt(bool pol = false, bool verbose = false);
+	void monte_carlo_sampling(Ran &myRan, double distortion);
+	void basin_hopping(Ran &myRan, double distortion, double verbose);
+	void basin_hopping_par(Ran &myRan, double distortion);
+	void setCOM();
+	void correctGrad();
+	void setDipole(bool);
+	void setXYZ(VectorXd xyz_new);
+	int getInteraction(int type1, int type2);
+
+	int inline getInteraction_fast(int type1, int type2) {
+		int interact = 0;
+		//Customized version for binary oxides
+		if (type1 != 8 && type2 != 8) {
+			interact = 2;
+		} else {
+			interact = 0;
+		}
+		if (type1 == 8 && type2 == 8) {
+			interact = 1;
+		}
+		//cout<< " "<<interact<< endl;
+		return interact;
+	}
+	void setcoreshell(bool verbose, bool reset);
 
 	//INLINED FUNCTIONS (does not bring too much gain)
 	//this method generates polynomial of arbitrarily degree

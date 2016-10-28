@@ -2,7 +2,6 @@
 #define TOOLIO_H_
 
 #include "ToolCalc.h"
-//#include <lapackpp.h>
 #include <Eigen/Core>
 
 using namespace std;
@@ -12,9 +11,9 @@ class ToolIO
 public:
 	ToolIO();
 	virtual ~ToolIO();
-	void parseCalctype();
-	void parseSETUP(ToolCalc &A);
-
+	void parseCalctype(const char* setupfile);
+	void parseSETUP(ToolCalc &A,const char* setupfile);
+	void parseCOSMO(ToolCalc &A,string filename);
 	void printMol(ToolCalc &A, bool shel=false);
 	void printFrac(ToolCalc &a, bool shel=false, bool peridoic=false);
 	void fractoFile(ToolCalc &a, bool shel=false, bool peridoic=false);
@@ -29,6 +28,10 @@ public:
 	void genomout(double lenergy, int lgenom_compressed[], int atnumber);
 	void printParameters(ToolCalc &A);
 	void printTiming(timeval &start, timeval &end);
+
+	int string2integer(string);
+	double string2double(string);
+
 };
 
 #endif /*TOOLIO_H_*/

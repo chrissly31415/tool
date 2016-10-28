@@ -240,17 +240,12 @@ void ToolCalcLJ::E_periodic(bool pol, bool verbose, bool gcalc) {
 		(*grad)(i)=lgrad[i];
 		//which gradients are frozen??
 		(*grad)(i)=lgrad[i]*(*moveMat)(i);
-		//cout << "grad:"<< (*grad)(i)<<endl;
-		//cout << lgrad[i]<<endl;
 	}
 	//gradnorm=Blas_Norm2((*grad));
 	gradnorm = grad->norm();
-
 	//gradmaxelem=Blas_Index_Max((*grad));
 	grad->maxCoeff(&gradmaxelem);
-
 	//gradinfnorm=Blas_Norm_Inf((*grad));
-	//cout << "Energy: "<<esum <<endl;
 	calculated=true;
 }
 
