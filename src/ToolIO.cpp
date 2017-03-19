@@ -135,7 +135,6 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 				}
 			}
 			//parsing parallel information
-
 			if (boost::regex_search(line, matches, parallel)) {
 				calculation.nproc = string2integer(matches[2].str());
 				cout << "Using " << calculation.nproc << " processor(s).\n";
@@ -314,8 +313,6 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 			calculation.atoms[i] = latoms[i];
 			calculation.atom_nr[i] = latom_nr[i];
 		}
-	} else {
-		cout << "OK calc defined already!!" << endl;
 	}
 
 	calculation.grad = new ToolCalc::VectorXd(3 * calculation.atnumber);
@@ -433,7 +430,7 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 
 			if (atoms_section && boost::regex_search(line, matches, atpos)) {
 				for (int i = 1; i < 4; ++i) {
-					lxyz[pos] = string2double(matches[i].str());
+					lxyz[pos] = string2double(matches[i].str())/ANG2BOHR;
 					pos++;
 				}
 				line = matches[4].str();
@@ -453,7 +450,7 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 					&& boost::regex_search(line, matches, segments_re)) {
 				seg_atom[nseg / 3] = string2integer(matches[1].str());
 				for (int i = 2; i < 5; ++i) {
-					segment_pos[nseg] = string2double(matches[i].str());
+					segment_pos[nseg] = string2double(matches[i].str())/ANG2BOHR;
 					nseg++;
 				}
 				sq[nseg / 3] = string2double(matches[5].str());

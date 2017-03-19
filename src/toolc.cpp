@@ -78,8 +78,10 @@ int main(int argc, char *argv[]) {
 		//(*myECalc).monte_carlo_sampling(myRan, 2);
 	} else if (toolc::ctype == "ZERNICKE") {
 		ToolCalcZE* zeCalc = dynamic_cast<ToolCalcZE*>(myECalc);
-		zeCalc->printSegments();
-		zeCalc->seg2grid(16,16,16,true);
+		zeCalc->printSegments(false);
+		zeCalc->seg2grid(32,32,32,true);
+		zeCalc->showgrid();
+		zeCalc->seg2qhull();
 
 		//(*newIO).gridout((*myECalc).genom,(*myECalc).gridp);
 

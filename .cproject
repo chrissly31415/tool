@@ -28,10 +28,10 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1615609700" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def"/>
 								<option id="gnu.cpp.compiler.option.preprocessor.undef.219246705" name="Undefined symbols (-U)" superClass="gnu.cpp.compiler.option.preprocessor.undef"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1750482097" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/include/eigen3"/>
 									<listOptionValue builtIn="false" value="/home/loschen/programs/boost_1_57_0"/>
-									<listOptionValue builtIn="false" value="/usr/local/include/lapackpp"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.optimization.flags.396452201" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" value="-ffast-math -floop-optimize " valueType="string"/>
+								<option id="gnu.cpp.compiler.option.optimization.flags.396452201" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" value="-floop-optimize " valueType="string"/>
 								<option id="gnu.cpp.compiler.option.debugging.other.89482561" name="Other debugging flags" superClass="gnu.cpp.compiler.option.debugging.other"/>
 								<option id="gnu.cpp.compiler.option.debugging.prof.1728368963" name="Generate prof information (-p)" superClass="gnu.cpp.compiler.option.debugging.prof"/>
 								<option id="gnu.cpp.compiler.option.debugging.gprof.1414968949" name="Generate gprof information (-pg)" superClass="gnu.cpp.compiler.option.debugging.gprof"/>
@@ -75,7 +75,6 @@
 								<option id="gnu.cpp.link.option.nostdlibs.1272815771" name="No startup or default libs (-nostdlib)" superClass="gnu.cpp.link.option.nostdlibs"/>
 								<option id="gnu.cpp.link.option.strip.392397313" name="Omit all symbol information (-s)" superClass="gnu.cpp.link.option.strip"/>
 								<option id="gnu.cpp.link.option.libs.334258900" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="lapackpp"/>
 									<listOptionValue builtIn="false" value="gomp"/>
 									<listOptionValue builtIn="false" value="boost_regex"/>
 								</option>
@@ -141,10 +140,9 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1667686841" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def"/>
 								<option id="gnu.cpp.compiler.option.preprocessor.undef.258997123" name="Undefined symbols (-U)" superClass="gnu.cpp.compiler.option.preprocessor.undef"/>
 								<option id="gnu.cpp.compiler.option.include.paths.554797763" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/local/include/lapackpp"/>
 									<listOptionValue builtIn="false" value="/usr/include/eigen3"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.optimization.flags.79415234" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" value="-floop-optimize  -funroll-loops -march=native" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.optimization.flags.79415234" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" value="-funroll-loops -march=native" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.debugging.other.841153758" name="Other debugging flags" superClass="gnu.cpp.compiler.option.debugging.other"/>
 								<option id="gnu.cpp.compiler.option.debugging.prof.1025740834" name="Generate prof information (-p)" superClass="gnu.cpp.compiler.option.debugging.prof"/>
 								<option id="gnu.cpp.compiler.option.debugging.gprof.1171168973" name="Generate gprof information (-pg)" superClass="gnu.cpp.compiler.option.debugging.gprof"/>

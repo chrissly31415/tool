@@ -12,35 +12,37 @@ ToolCalcZE::ToolCalcZE() {
 
 }
 
-void ToolCalcZE::printSegments() {
+void ToolCalcZE::printSegments(bool unitsBohr) {
 	cout << "atom: " << "seg:" << "x:       " << "y:       " << "z:       "
 			<< endl;
 	cout << fixed << setprecision(4);
+	double conv = 1.0;
+	if (unitsBohr) conv = ANG2BOHR;
 	for (int i = 0; i < nseg * 3; i += 3) {
 		cout << setw(5) << satom(i / 3) << setw(4) << (i / 3);
-		cout << setw(10) << segments(i) << setw(10) << segments(i + 1)
-				<< setw(10) << segments(i + 2) << endl;
+		cout << setw(10) << segments(i)*conv << setw(10) << segments(i + 1)*conv
+				<< setw(10) << segments(i + 2)*conv << endl;
 	}
 
 }
 
 void ToolCalcZE::defineCubeSize() {
 	//reshape matrix - just a view
-	Eigen::MatrixXd M1(*xyz);
+	Eigen::MatrixXd M1(segments);
 
 	Eigen::Map<
 			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-					Eigen::RowMajor>> M2(M1.data(), 3, M1.cols() / 3);
+					Eigen::RowMajor>> M2(M1.data(), M1.cols() / 3, 3);
 	Eigen::Vector3d maxv = M2.colwise().maxCoeff();
 	Eigen::Vector3d minv = M2.colwise().minCoeff();
 	double delta = 1.0;
-	if (Lx < 1E-5) {
+	if (Lx < 1E-15) {
 		Lx = maxv(0) - minv(0) + delta;
 	}
-	if (Ly < 1E-5) {
+	if (Ly < 1E-15) {
 		Ly = maxv(1) - minv(1) + delta;
 	}
-	if (Lz < 1E-5) {
+	if (Lz < 1E-15) {
 		Lz = maxv(2) - minv(2) + delta;
 	}
 	cout << "Lx,Ly,Lz: ";
@@ -49,63 +51,79 @@ void ToolCalcZE::defineCubeSize() {
 	cout << Lx << " " << Ly << " " << Lz << endl;
 }
 
+Eigen::Vector3d ToolCalcZE::getCubeOrigin() {
+	Eigen::MatrixXd M1(segments);
+	Eigen::Map<
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+						Eigen::RowMajor>> M2(M1.data(), M1.cols() / 3, 3);
+	Eigen::Vector3d minv = M2.colwise().minCoeff();
+	double delta = 1E-1;
+	int n = minv.size();
+	return minv - delta * Eigen::Vector3d::Ones(n);
+}
+
+void ToolCalcZE::showgrid() {
+	Eigen::Map<
+						Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+								Eigen::RowMajor>> M2(gridseg.data(), gridseg.rows() / 3, 3);
+
+		Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
+		cout<<M2.format(NumpyFmt)<<endl;
+}
+
+void ToolCalcZE::seg2qhull() {
+	cout<<"3 cosmo segments"<<endl;
+	cout<<nseg<<endl;
+	Eigen::MatrixXd M1(segments);
+		Eigen::Map<
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+						Eigen::RowMajor>> M2(M1.data(), M1.cols() / 3, 3);
+	//Eigen::IOFormat QHullFmt(Eigen::FullPrecision, 0, ", ", ",\n", "", "", "", "");
+	//cout<<M2.format(QHullFmt)<<endl;
+	cout<<M2<<endl;
+}
+
 void ToolCalcZE::seg2grid(int na, int nb, int nc, bool verbose) {
+	//need list of grid points?
+	//C   2 4 0
+	//C   1 4 9
+	gridseg = Eigen::MatrixXd::Zero(nseg*3,1);
 	defineCubeSize();
 	gx = na;
 	gy = nb;
 	gz = nc;
 	gridp = na * nb * nc;
-
-	double cubex = 0, cubey = 0, cubez = 0;
-	double spacex = 0, spacey = 0, spacez = 0;
+	double cubex = 0.0, cubey = 0.0, cubez = 0.0;
+	double spacex = 0.0, spacey = 0.0, spacez = 0.0;
 	spacex = Lx / (double) na;
 	spacey = Ly / (double) nb;
 	spacez = Lz / (double) nc;
 	int hit = 0;
-	int segment = 0;
-	int segment_old = 0;
-	int atom1;
-	//cout << atnumber << endl;
-	genom = new int[gridp];
 
-	//segment=0;
-	for (int a = 0; a < na; a++) {
+	Eigen::Vector3d cubeo = getCubeOrigin();
+	for (int i = 0; i < nseg * 3; i += 3) {
+		cubex = cubeo(0) - spacex;
+		for (int a = 0; a < na; a++) {
+			cubex = cubex + spacex;
+			cubey = cubeo(1)- spacey;
+			for (int b = 0; b < nb; b++) {
+				cubey = cubey + spacey;
+				cubez = cubeo(2)- spacez;
+				for (int c = 0; c < nc; c++) {
+					cubez = cubez + spacez;
 
-		cubex = a * spacex;
-		for (int b = 0; b < nb; b++) {
 
-			cubey = b * spacey;
-			for (int c = 0; c < nc; c++) {
-				cubez = c * spacez;
-				genom[segment] = 0;
-				for (int i = 0; i < atnumber * 3; i += 3) {
-					atom1 = i / 3;
-					if (((*xyz)(i) > cubex) && ((*xyz)(i) < (cubex + spacex))
-							&& (((*xyz)(i + 1) > cubey)
-									&& ((*xyz)(i + 1) < (cubey + spacey)))
-							&& (((*xyz)(i + 2) > cubez)
-									&& ((*xyz)(i + 2) < (cubez + spacez)))) {
-						//cout << "Hit:"<< (*xyz)(i) << " " <<(*xyz)(i+1) << " "
-						//		<<(*xyz)(i+2)<< endl;
-						//cout << "Actual seg: "<< segment<< " coords x:" <<cubex
-						//	<<" y:"<<cubey <<" z:" <<cubez<<endl;
-						if (segment == segment_old) {
-							cout << "\nWARNING: Two atoms at one grid_point:"
-									<< segment << endl;
-							segment++;
-						}
-						genom[segment] = (int) q[atom1];
-						segment_old = segment;
-						//cout << "Genom["<<segment<<"]"<<genom[segment] << endl;
-						//cout << " "<< segment;
+					if (((segments)(i) > cubex) && ((segments)(i) < (cubex + spacex))
+							&& (((segments)(i + 1) > cubey)
+									&& ((segments)(i + 1) < (cubey + spacey)))
+							&& (((segments)(i + 2) > cubez)
+									&& ((segments)(i + 2) < (cubez + spacez)))) {
 						hit++;
-						//cout << hit<< endl;
+						gridseg(i) = a;
+						gridseg(i+1) = b;
+						gridseg(i+2) = c;
 					}
-
-					//(*xyz)(i)=(*xyz)(i)*(1-(*moveMat)(i))+j*(*moveMat)(i);
 				}
-				segment++;
-
 			}
 		}
 
@@ -113,12 +131,13 @@ void ToolCalcZE::seg2grid(int na, int nb, int nc, bool verbose) {
 	//cout << "Actual seg: "<< segment<< " coords x:" <<cubex+spacex<<" y:"
 	//		<<cubey+spacey <<" z:" <<cubez+spacez<<endl;
 	if (verbose == true) {
-		cout << endl << "xyz2grid:" << endl << "Grid size x:" << na << " y:"
+		cout << endl << "seg2grid:" << endl << "Grid size x:" << na << " y:"
 				<< nb << " z:" << nc << endl;
 		cout << "New grid created with " << gridp << " positions.\n";
-		cout << "Projected " << hit << " out of " << atnumber
-				<< " total atoms into Grid..." << endl;
+		cout << "Projected " << hit << " out of " << nseg
+				<< " total segments into grid coordinates..." << endl;
 	}
+
 }
 
 //projects coordinates to grid
@@ -342,7 +361,7 @@ void ToolCalcZE::grid2xyz(bool verbose) {
 	}
 }
 
-//sets xyz-coordinates
+//sets xyz-coordinates, puts oxygen to the end??
 void ToolCalcZE::orderOx() {
 	int atom1;
 	int n;

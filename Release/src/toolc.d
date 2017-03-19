@@ -96,7 +96,7 @@ src/toolc.d: ../src/toolc.cpp ../src/toolc.h ../src/ToolCalc.h \
  /usr/include/eigen3/Eigen/src/Core/GlobalFunctions.h \
  /usr/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h \
  ../src/fitlin.h ../src/nr3.h ../src/ran.h ../src/ToolCalcPP.h \
- ../src/ToolCalcLJ.h ../src/ToolIO.h
+ ../src/ToolCalcLJ.h ../src/ToolCalcZE.h ../src/ToolIO.h
 
 ../src/toolc.h:
 
@@ -303,5 +303,7 @@ src/toolc.d: ../src/toolc.cpp ../src/toolc.h ../src/ToolCalc.h \
 ../src/ToolCalcPP.h:
 
 ../src/ToolCalcLJ.h:
+
+../src/ToolCalcZE.h:
 
 ../src/ToolIO.h:
