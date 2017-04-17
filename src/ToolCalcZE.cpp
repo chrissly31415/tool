@@ -2,6 +2,7 @@
 #include "ToolIO.h"
 #include <iostream>
 #include <Eigen/Core>
+#include <cmath>
 
 using namespace std;
 
@@ -81,6 +82,27 @@ void ToolCalcZE::seg2qhull() {
 	//Eigen::IOFormat QHullFmt(Eigen::FullPrecision, 0, ", ", ",\n", "", "", "", "");
 	//cout<<M2.format(QHullFmt)<<endl;
 	cout<<M2<<endl;
+}
+
+void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
+	cout<<"Fitting sphere to segments"<<endl;
+	cout<<" atnumber:"<<atnumber<<endl;
+	int at=0;
+	double x,y,z,sx,sy,sz,dist;
+	for (int i = 0; i < nseg*3; i += 3) {
+		cout<<"segment:"<<i/3;
+		at = satom(i/3);
+		cout<<" at:"<<at;
+		sx = segments(i);
+		sy = segments(i+1);
+		sz = segments(i+2);
+		x = (*xyz)(3*at);
+		y = (*xyz)(3*at+1);
+		z = (*xyz)(3*at+2);
+		dist = sqrt(pow(x-sx,2)+pow(y-sy,2)+pow(z-sz,2));
+		cout<<" dist:"<<dist<<endl;
+	}
+
 }
 
 void ToolCalcZE::seg2grid(int na, int nb, int nc, bool verbose) {

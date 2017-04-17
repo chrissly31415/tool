@@ -13,6 +13,7 @@ public:
 	Eigen::Vector3d getCubeOrigin();
 	void xyz2grid(int a, int b, int c, bool verbose = false);
 	void seg2grid(int a, int b, int c, bool verbose = false);
+	void seg2voxel(int a, int b, int c, bool verbose = false);
 	void seg2qhull();
 	void showgrid();
 	void gridout();

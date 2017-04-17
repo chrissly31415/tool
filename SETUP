@@ -3,6 +3,6 @@ periodic
 cell 20.0 20.0 20.0
 END
 COORD
-ethyl_acetate.cosmo
-#h2o.cosmo
+#ethyl_acetate.cosmo
+h2o.cosmo
 END

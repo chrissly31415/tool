@@ -488,14 +488,11 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 	calculation.sarea = ToolCalc::VectorXd::Zero(nseg);
 	calculation.satom = ToolCalc::VectorXi::Zero(nseg);
 	for (int i = 0; i < nseg*3; i += 3) {
-//		cout << "atom: " << seg_atom[i / 3] << "segment: " << (i / 3) << " x:"
-//				<< segment_pos[i] << " y:" << segment_pos[i + 1] << " z:"
-//				<< segment_pos[i + 2] << endl;
 		calculation.segments(i) = segment_pos[i];
 		calculation.segments(i + 1) = segment_pos[i + 1];
 		calculation.segments(i + 2) = segment_pos[i + 2];
 
-		calculation.satom(i/3) = seg_atom[i/3];
+		calculation.satom(i/3) = seg_atom[i/3]-1;
 		calculation.scharge(i/3) = sq[i/3];
 		calculation.sarea(i/3) = sa[i/3];
 
