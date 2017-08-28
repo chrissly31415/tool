@@ -109,6 +109,7 @@ public:
 	bool converged;
 	static string elements[87];
 	static double emass[87];
+	static double bondiradii[87];
 
 	//Grid related
 	int* genom;

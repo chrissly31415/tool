@@ -8,7 +8,7 @@ using namespace std;
 
 //Concstructor with variable initialization
 ToolCalc::ToolCalc() {
-	atnumber=0;
+	atnumber = 0;
 	calculated = false;
 	energy = 0.;
 	gradnorm = 0.;
@@ -28,13 +28,13 @@ ToolCalc::ToolCalc() {
 }
 //PES
 string ToolCalc::elements[87] = { "X", "H", "He", "Li", "Be", "B", "C", "N",
-		"O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K",
-		"Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
-		"Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc",
-		"Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs",
-		"Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho",
-		"Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au",
-		"Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn" };
+		"O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
+		"Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge",
+		"As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru",
+		"Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba",
+		"La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er",
+		"Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+		"Tl", "Pb", "Bi", "Po", "At", "Rn" };
 //atomic masses
 double ToolCalc::emass[87] = { 0.0, 1.0079, 4.00260, 6.941, 9.01218, 10.81,
 		12.011, 14.0067, 16.0, 18.998403, 20.1797, 22.98977, 24.305, 26.98154,
@@ -48,6 +48,15 @@ double ToolCalc::emass[87] = { 0.0, 1.0079, 4.00260, 6.941, 9.01218, 10.81,
 		174.967, 178.49, 180.9479, 183.85, 186.207, 190.23, 192.217, 195.078,
 		196.9665, 200.59, 204.3883, 207.2, 208.9804, 209.0, 210.0, 222.0 };
 
+double ToolCalc::bondiradii[87] = { 120.0, 140.0, 182.0, 153.0, 192.0, 170.0,
+		155.0, 152.0, 147.0, 154.0, 227.0, 173.0, 184.0, 210.0, 180.0, 180.0,
+		175.0, 188.0, 275.0, 231.0, 211.0, 0, 0, 0, 0, 0, 0, 163.0, 140.0,
+		139.0, 187.0, 211.0, 185.0, 190.0, 185.0, 202.0, 303.0, 249.0, 0, 0, 0,
+		0, 0, 0, 0, 163.0, 172.0, 158.0, 193.0, 217.0, 206.0, 206.0, 198.0,
+		216.0, 343.0, 268.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 175.0, 166.0, 155.0, 196.0, 202.0, 207.0, 197.0, 202.0,
+		220.0 };
+
 //makes random move
 void ToolCalc::moveRandom(Ran &myRan, double stepsize, double zscale) {
 	double j;
@@ -55,13 +64,13 @@ void ToolCalc::moveRandom(Ran &myRan, double stepsize, double zscale) {
 	//double stepsize =0.3;
 	for (int i = 0; i < atnumber * 3; i++) {
 		j = myRan.doub();
-		j = (2* j - 1.0) * stepsize * (*moveMat)(i);
+		j = (2 * j - 1.0) * stepsize * (*moveMat)(i);
 		//cout << j <<endl;
 		(*xyz)(i) = ((*xyz)(i) + j);
 		if (i % 3 == 2) {
 			//this is z-coordinate
 			z = myRan.doub();
-			z = (2* z - 1.0) * zscale * (*moveMat)(i);
+			z = (2 * z - 1.0) * zscale * (*moveMat)(i);
 			(*xyz)(i) = ((*xyz)(i) + z);
 		}
 	}
@@ -75,7 +84,7 @@ void ToolCalc::moveRandomPol(Ran &myRan, double stepsize) {
 	for (int i = 0; i < atnumber * 3; i++) {
 		atom = i / 3;
 		j = myRan.doub();
-		j = (2* j - 1.0) * stepsize * (*moveMat)(i);
+		j = (2 * j - 1.0) * stepsize * (*moveMat)(i);
 		(*xyz)(i) = ((*xyz)(i) + j);
 		if (core_shell[atom] == "SHEL") {
 			(*xyz)(i + nr_cores * 3) = (*xyz)(i);
@@ -90,14 +99,12 @@ void ToolCalc::createRandom(Ran &myRan, double radius) {
 	double j;
 	for (int i = 0; i < atnumber * 3; i++) {
 		j = myRan.doub();
-		j = (2* j - 1.0) * radius;
+		j = (2 * j - 1.0) * radius;
 		//cout << j <<endl;
 		//complicated expression: moveMat=0: Partikel frozen, moveMat=1: can be moved / scaled
 		(*xyz)(i) = (*xyz)(i) * (1 - (*moveMat)(i)) + j * (*moveMat)(i);
 	}
 }
-
-
 
 //sets xyz-coordinates
 void ToolCalc::setXYZ(VectorXd xyz_new) {
@@ -204,11 +211,11 @@ void ToolCalc::setUP_periodic(bool periodic, bool pol, bool verbose) {
 //Lennard Jones Energy optimisation
 void ToolCalc::monte_carlo_sampling(Ran &myRan, double distortion) {
 	ToolIO newIO;
-	VectorXd xyz_min(3* atnumber);
+	VectorXd xyz_min(3 * atnumber);
 	double min_energy;
-	VectorXd xyz_global(3* atnumber);
+	VectorXd xyz_global(3 * atnumber);
 	double global_energy = 0;
-	VectorXd xyz_old(3* atnumber );
+	VectorXd xyz_old(3 * atnumber);
 	double energy_old = 0;
 	double k = 8.617343 / 10000.0; //eV/K
 	double random = 0;
@@ -224,15 +231,15 @@ void ToolCalc::monte_carlo_sampling(Ran &myRan, double distortion) {
 		//our minimum is our first structure
 		min_energy = energy;
 		//xyz_min.copy(*xyz);
-		xyz_min = xyz->replicate(1,1);
+		xyz_min = xyz->replicate(1, 1);
 		if (j == 0) {
 			global_energy = energy;
-			xyz_global= xyz->replicate(1,1);
+			xyz_global = xyz->replicate(1, 1);
 		}
 		//inner loop
 		for (int i = 0; i < global_maxiter; i++) {
 			cout << "MC Move " << i << ": ";
-			xyz_old= xyz->replicate(1,1);
+			xyz_old = xyz->replicate(1, 1);
 			energy_old = energy;
 			moveRandom(myRan, distortion);
 			opt(false, false);
@@ -243,14 +250,15 @@ void ToolCalc::monte_carlo_sampling(Ran &myRan, double distortion) {
 			///grid2genom(false);
 			//cout<<endl;
 			//newIO.genomout(energy, genom_compressed, atnumber);
-			newIO.printRDF(atnumber, energy, atoms, *xyz,cutoff, Lx, Ly,Lz);
+			newIO.printRDF(atnumber, energy, atoms, *xyz, cutoff, Lx, Ly, Lz);
 			newIO.genom2File(energy, genom_compressed, atnumber);
 			//higher energy
 			if (energy > (energy_old)) {
 				//test for Boltzmann Faktor
 				random = myRan.doub();
-				boltzf = exp(-1 * ((energy - energy_old) * HARTREE2EV) / (k
-						* temperature));
+				boltzf = exp(
+						-1 * ((energy - energy_old) * HARTREE2EV)
+								/ (k * temperature));
 				//				cout << energy << " " << min_energy << endl;
 				//
 				//				cout << "BF: " << boltzf << endl;
@@ -263,13 +271,13 @@ void ToolCalc::monte_carlo_sampling(Ran &myRan, double distortion) {
 				} else {
 					//Do not accept MC step
 					cout << " #";
-					*xyz= xyz_old.replicate(1,1);
+					*xyz = xyz_old.replicate(1, 1);
 				}
 				//lower energy anyway
 			} else {
 				if (energy < (min_energy - 0.01)) {
 					min_energy = energy;
-					xyz_min = xyz->replicate(1,1);
+					xyz_min = xyz->replicate(1, 1);
 					//cout << energy << " " << min_energy << endl;
 					cout << " +";
 				} else {
@@ -279,27 +287,27 @@ void ToolCalc::monte_carlo_sampling(Ran &myRan, double distortion) {
 				if (energy < (global_energy - 0.01)) {
 					cout << " GM";
 					global_energy = energy;
-					xyz_global= xyz->replicate(1,1);
+					xyz_global = xyz->replicate(1, 1);
 					min_energy = energy;
-					xyz_min = xyz->replicate(1,1);
+					xyz_min = xyz->replicate(1, 1);
 					E();
-					newIO.fractoFile2(atnumber, energy, atoms, *xyz,
-							core_shell, nr_shells, true, Lx, Ly, Lz);
+					newIO.fractoFile2(atnumber, energy, atoms, *xyz, core_shell,
+							nr_shells, true, Lx, Ly, Lz);
 
 				}
 			}
 			cout << endl;
 		}
 	}
-	*xyz = xyz_global.replicate(1,1);
+	*xyz = xyz_global.replicate(1, 1);
 }
 //new try for basin hoppin
 void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 	ToolIO newIO;
-	VectorXd xyz_min(3* atnumber );
-	VectorXd xyz_global(3* atnumber );
-	VectorXd xyz_actual(3* atnumber );
-	VectorXd xyz_opt(3* atnumber );
+	VectorXd xyz_min(3 * atnumber);
+	VectorXd xyz_global(3 * atnumber);
+	VectorXd xyz_actual(3 * atnumber);
+	VectorXd xyz_opt(3 * atnumber);
 	double min_energy;
 	double global_energy = 0;
 	double random;
@@ -310,15 +318,14 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 			<< temperature << " K##" << endl;
 	//opt();
 	global_energy = energy;
-	xyz_global = xyz->replicate(1,1);
+	xyz_global = xyz->replicate(1, 1);
 	//outer loop, creating new random structures
 	for (int j = 0; j < nr_reset; j++) {
 		//
 		if (j == 0) {
 			cout << endl << "###Creating Random Structure, scale: "
-					<< distortion << ", zscale: " << distortion
-					<< " iteration " << (j + 1) << " out of " << nr_reset
-					<< " ###" << endl;
+					<< distortion << ", zscale: " << distortion << " iteration "
+					<< (j + 1) << " out of " << nr_reset << " ###" << endl;
 			//createRandom(myRan, distortion);
 			moveRandom(myRan, distortion);
 		} else {
@@ -336,14 +343,14 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 		opt(false, false);
 		//The actual minimum as a base
 		min_energy = energy;
-		xyz_min = xyz->replicate(1,1);
+		xyz_min = xyz->replicate(1, 1);
 		//our minimum is our first structure
 		//inner loop
 		cout << endl;
 		for (int i = 0; i < global_maxiter; i++) {
 			//Important, otherwise code slows down!
 			if (periodic == true) {
-			setUP_periodic(periodic, false, false);
+				setUP_periodic(periodic, false, false);
 			}
 			//timing
 			timeval t1, t2;
@@ -352,11 +359,11 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 			moveRandom(myRan, distortion);
 			E();
 			//save random starting structure
-			xyz_actual = xyz->replicate(1,1);
+			xyz_actual = xyz->replicate(1, 1);
 
 			opt(false, false);
 			//save optimized structure
-			xyz_opt = xyz->replicate(1,1);
+			xyz_opt = xyz->replicate(1, 1);
 			//cout << energy << " "<<(k+temperature);
 			//4 cases:
 			//GM: New global minimum
@@ -368,12 +375,13 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 			if (energy > (min_energy + 0.01)) {
 				//Testing for Boltzmann-criterion
 				random = myRan.doub();
-				boltzf = exp(-1 * ((energy - min_energy) * HARTREE2EV) / (k
-						* temperature));
+				boltzf = exp(
+						-1 * ((energy - min_energy) * HARTREE2EV)
+								/ (k * temperature));
 				if (boltzf > random) {
 					//Accept upwards MC step
 					min_energy = energy;
-					xyz_min= xyz_opt.replicate(1,1);
+					xyz_min = xyz_opt.replicate(1, 1);
 					cout << " -";
 					//calculate Q
 					//Qpart = Qpart + exp(-1* energy / (k * temperature));
@@ -382,7 +390,7 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 				} else {
 					//Do not accept MC step
 					setXYZ(xyz_min);
-					xyz_opt= xyz_min.replicate(1,1);
+					xyz_opt = xyz_min.replicate(1, 1);
 					E();
 					cout << " #";
 
@@ -391,7 +399,7 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 				if ((energy < (min_energy - 0.01))) {
 					//New local minimum
 					min_energy = energy;
-					xyz_min= xyz_opt.replicate(1,1);
+					xyz_min = xyz_opt.replicate(1, 1);
 					cout << " +";
 					//calculate Q
 					//Qpart = Qpart + exp(-1* energy / (k * temperature));
@@ -407,13 +415,13 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 			if (energy < (global_energy - 0.01)) {
 				//If new global minimum
 				global_energy = energy;
-				xyz_global= xyz_opt.replicate(1,1);
+				xyz_global = xyz_opt.replicate(1, 1);
 				cout << " GM";
 				//cout << '\a';
 				newIO.fractoFile2(atnumber, energy, atoms, xyz_global,
 						core_shell, nr_shells, true, Lx, Ly, Lz);
-				newIO.moltoFile2(atnumber, energy, atoms, xyz_global, core_shell,
-									nr_shells, shell_modell);
+				newIO.moltoFile2(atnumber, energy, atoms, xyz_global,
+						core_shell, nr_shells, shell_modell);
 
 			}
 			//cout << "\tQpart:" << Qpart;
@@ -435,16 +443,15 @@ void ToolCalc::basin_hopping(Ran &myRan, double distortion, double verbose) {
 				newIO.printTiming(t1, t2);
 			}
 		}
-		(*xyz)= xyz_global.replicate(1,1);
+		(*xyz) = xyz_global.replicate(1, 1);
 
 		//opt();
 	}
 	if (verbose == true) {
-		cout << setiosflags(ios::fixed) << setprecision(2)<< "\nE(global_min):" << global_energy<<endl;
+		cout << setiosflags(ios::fixed) << setprecision(2) << "\nE(global_min):"
+				<< global_energy << endl;
 	}
 }
-
-
 
 //get center of mass
 void ToolCalc::setCOM() {
@@ -454,9 +461,9 @@ void ToolCalc::setCOM() {
 	for (int i = 0; i < atnumber; i++) {
 		mass = ToolCalc::emass[atom_nr[i]];
 		total_mass = +mass;
-		mxyz(0) = (*xyz)(3* i ) * mass;
-		mxyz(1) = (*xyz)(3* i + 1) * mass;
-		mxyz(2) = (*xyz)(3* i + 2) * mass;
+		mxyz(0) = (*xyz)(3 * i) * mass;
+		mxyz(1) = (*xyz)(3 * i + 1) * mass;
+		mxyz(2) = (*xyz)(3 * i + 2) * mass;
 	}
 	mxyz(0) = mxyz(0) / total_mass;
 	mxyz(1) = mxyz(1) / total_mass;
@@ -530,9 +537,9 @@ void ToolCalc::setcoreshell(bool verbose, bool reset) {
 		for (int i = 0; i < numpos; i += 3) {
 			atom1 = i / 3;
 			if (atom_nr[atom1] == 8 && core_shell[atom1] == "SHEL") {
-				(*xyz)(i + 3* nr_cores ) = (*xyz)(i);
-				(*xyz)(i + 1 + 3* nr_cores ) = (*xyz)(i + 1);
-				(*xyz)(i + 2 + 3* nr_cores ) = (*xyz)(i + 2);
+				(*xyz)(i + 3 * nr_cores) = (*xyz)(i);
+				(*xyz)(i + 1 + 3 * nr_cores) = (*xyz)(i + 1);
+				(*xyz)(i + 2 + 3 * nr_cores) = (*xyz)(i + 2);
 			}
 		}
 	}
@@ -558,19 +565,19 @@ void ToolCalc::setcoreshell(bool verbose, bool reset) {
 									<< atom2 + 1 << " is: " << dist << endl;
 						}
 						break;
-					}//end if
-				}//end if
-			}//end for j
-			//could should not get here
+					}		//end if
+				}		//end if
+			}		//end for j
+					//could should not get here
 			if (shell_exists == false) {
-				cout << "\nWARNING: No core found for shell atom #" << atom1
-						+ 1 << " within cutoff radius, EXIT..." << endl;
+				cout << "\nWARNING: No core found for shell atom #" << atom1 + 1
+						<< " within cutoff radius, EXIT..." << endl;
 				exit(1);
 			}
 
-		}// end if
+		}			// end if
 
-	}// end for i
+	}			// end for i
 	cout << "Shell specifications are ok.\n";
 }
 
@@ -610,9 +617,9 @@ void ToolCalc::append_shells(bool verbose) {
 	numposall = (atnumber) * 3;
 
 	//atomtype&position
-	VectorXd lxyz(3* atnumber );
-	VectorXd lgrad(3* atnumber );
-	VectorXd lmovemat(3* atnumber );
+	VectorXd lxyz(3 * atnumber);
+	VectorXd lgrad(3 * atnumber);
+	VectorXd lmovemat(3 * atnumber);
 	//Go through shells
 	for (int i = 0; i < (atnumber - nr_cores) * 3; i++) {
 		atom1 = i / 3;
@@ -656,9 +663,9 @@ void ToolCalc::append_shells(bool verbose) {
 	(*xyz).resize(atnumber * 3);
 	(*grad).resize(atnumber * 3);
 	(*moveMat).resize(atnumber * 3);
-	(*xyz)= lxyz.replicate(1,1);
-	(*grad) = lgrad.replicate(1,1);
-	(*moveMat) = lmovemat.replicate(1,1);
+	(*xyz) = lxyz.replicate(1, 1);
+	(*grad) = lgrad.replicate(1, 1);
+	(*moveMat) = lmovemat.replicate(1, 1);
 	//charges
 	//	calculation.q = new double[countatom];
 	//	calculation.core_shell = new string[countatom];
@@ -714,7 +721,7 @@ void ToolCalc::strip_shells(bool verbose) {
 		exit(1);
 	}
 	atnumber = atnumber - nr_cores;
-	VectorXd lxyz(3* atnumber );
+	VectorXd lxyz(3 * atnumber);
 	//counting oxygen shells && setting charges
 	for (int i = 0; i < atnumber * 3; i++) {
 		atom1 = i / 3;
@@ -733,7 +740,7 @@ void ToolCalc::strip_shells(bool verbose) {
 	}
 	(*xyz).resize(atnumber * 3);
 	(*grad).resize(atnumber * 3);
-	(*xyz) = lxyz.replicate(1,1);
+	(*xyz) = lxyz.replicate(1, 1);
 	//setting charges
 	TotalQ = 0;
 	//cout << endl;
@@ -758,9 +765,9 @@ void ToolCalc::strip_shells(bool verbose) {
 }
 
 void ToolCalc::opt(bool pol, bool verbose) {
-	VectorXd h(3* atnumber );
-	VectorXd old_xyz(3* atnumber );
-	VectorXd old_grad(3* atnumber );
+	VectorXd h(3 * atnumber);
+	VectorXd old_xyz(3 * atnumber);
+	VectorXd old_grad(3 * atnumber);
 	VectorXd dxyz;
 	if (verbose == true && pol == true) {
 		cout << "Shell model switched ON...\n";
@@ -809,8 +816,8 @@ void ToolCalc::opt(bool pol, bool verbose) {
 			//			if (calctype == "PP" || calctype == "POL") {
 			cout << "Optimisation CONVERGED in ";
 			cout << "Cycle " << i << ", ||grad||< " << threshhold
-					<< " # Energy: " << energy << " a.u. " << energy
-					* HARTREE2EV << " eV";
+					<< " # Energy: " << energy << " a.u. "
+					<< energy * HARTREE2EV << " eV";
 			//			} else {
 			//				cout << "CONVERGED in ";
 			//				cout <<"Cycle "<< i << ". Energy:" << energy << ", ||grad||: "
@@ -827,13 +834,13 @@ void ToolCalc::opt(bool pol, bool verbose) {
 			}
 		}
 		if (i == 0) {
-			h =grad->replicate(1,1);
-			h = h*-1.0;
+			h = grad->replicate(1, 1);
+			h = h * -1.0;
 		}
 		double old_gradn;
 		old_gradn = grad->norm();
-		old_grad = grad->replicate(1,1);
-		old_xyz = xyz->replicate(1,1);
+		old_grad = grad->replicate(1, 1);
+		old_xyz = xyz->replicate(1, 1);
 		//we are starting with line search
 		//step=0.001;
 		lambda = 0;
@@ -846,7 +853,7 @@ void ToolCalc::opt(bool pol, bool verbose) {
 		//cout << "("<<0<<"), lambda:  "<<ls_x[0]<<" Energy:" << setw(12) << ls_energy[0] <<endl;
 		for (int k = 1; k < ls_steps; k++) {
 			//makes use of optimum line search element after some time
-			if (gradnorm < 100* threshhold && k == 1) {
+			if (gradnorm < 100 * threshhold && k == 1) {
 				lambda = opt_lambda - (ls_steps - 1) * lstep;
 				//cout << "Switching on opt_lambda..."<< lambda << endl;
 			}
@@ -854,7 +861,7 @@ void ToolCalc::opt(bool pol, bool verbose) {
 			ls_x[k] = lambda;
 			//cout << "ls_x:" <<ls_x[k] << " ";
 			//Blas_Add_Mult(*xyz, lambda, h);
-			*xyz = (*xyz) +lambda* h;
+			*xyz = (*xyz) + lambda * h;
 			//only rough energy, no gradients!
 			//ewald_thresh = ewald_thresh * 10;
 			//cutoff = cutoff - 10;
@@ -866,19 +873,19 @@ void ToolCalc::opt(bool pol, bool verbose) {
 
 			//resetting coordinates
 			//setXYZ(old_xyz);
-			(*xyz) = old_xyz.replicate(1,1);
+			(*xyz) = old_xyz.replicate(1, 1);
 			//(*xyz).copy(old_xyz);
 		}
 		opt_lambda = fitenergy(ls_x, ls_energy, fpoly_np);
 		//cout << "opt_lambda: " << opt_lambda << "  "<< endl;
 		//Final CG scale
 		//Blas_Add_Mult(*xyz, opt_lambda, h);
-		*xyz = (*xyz) + opt_lambda*h;
+		*xyz = (*xyz) + opt_lambda * h;
 
 		//Filtering max elements
-		dxyz = xyz->replicate(1,1);
+		dxyz = xyz->replicate(1, 1);
 		//Blas_Add_Mult(dxyz, -1, old_xyz);
-		dxyz = dxyz - 1.0 *old_xyz;
+		dxyz = dxyz - 1.0 * old_xyz;
 		//check for max displacement:
 		for (int j = 0; j < (dxyz).size(); j++) {
 			if (fabs(dxyz(j)) > max_displacement) {
@@ -886,7 +893,7 @@ void ToolCalc::opt(bool pol, bool verbose) {
 				if (dxyz(j) > 0) {
 					(dxyz)(j) = max_displacement;
 				} else {
-					(dxyz)(j) = -1* max_displacement ;
+					(dxyz)(j) = -1 * max_displacement;
 				}
 			}
 		}
@@ -899,35 +906,35 @@ void ToolCalc::opt(bool pol, bool verbose) {
 		setXYZ(dxyz);
 		//(*xyz).copy(dxyz);
 		//Blas_Add_Mult(old_xyz, -1, *xyz);
-		old_xyz = old_xyz - 1*(*xyz);
+		old_xyz = old_xyz - 1 * (*xyz);
 
 		(this->*p_E)(pol, false, true);
 		if (verbose == true) {
 			cout << "Cycle " << i + 1 << " Energy:" << energy << ", ||grad||: "
-					<< gradnorm << ", ||displacement||: "
-					<< old_xyz.norm() << endl;
+					<< gradnorm << ", ||displacement||: " << old_xyz.norm()
+					<< endl;
 		}
 
 		//Polak-Ribiere, p.517 numerical recipes
 		double temp;
 		//Blas_Add_Mult(old_grad, -1, *grad);
-		old_grad = old_grad -1.0 * (*grad);
+		old_grad = old_grad - 1.0 * (*grad);
 
 		//Blas_Scale(-1., old_grad);
-		old_grad = -1.0 *old_grad;
-		temp = (old_grad.dot( *grad)) / (old_gradn * old_gradn);
+		old_grad = -1.0 * old_grad;
+		temp = (old_grad.dot(*grad)) / (old_gradn * old_gradn);
 		if (temp > 1) {
 			temp = 1;
 		}
 		//cout << "temp:" << temp << endl;
 		//h.scale(-1* temp );
-		h = h * -1.0 *temp;
+		h = h * -1.0 * temp;
 
 		//Blas_Add_Mult(h, 1., *grad);
 		h = h + 1.0 * (*grad);
 
 		//h.scale(-1.);
-		h = h *-1.0;
+		h = h * -1.0;
 		//convergence checks
 		//
 	}

@@ -14,13 +14,12 @@ ToolCalcZE::ToolCalcZE() {
 }
 
 void ToolCalcZE::printSegments(bool unitsBohr) {
-	cout << "atom: " << "seg:" << "x:       " << "y:       " << "z:       "
-			<< endl;
+	cout << setw(5)<< "atom" << setw(8)<< "segment" << setw(10)<< "x" << setw(10)<< "y"<< setw(10) << "z"<< endl;
 	cout << fixed << setprecision(4);
 	double conv = 1.0;
 	if (unitsBohr) conv = ANG2BOHR;
 	for (int i = 0; i < nseg * 3; i += 3) {
-		cout << setw(5) << satom(i / 3) << setw(4) << (i / 3);
+		cout << setw(5) << satom(i / 3) << setw(8) << (i / 3);
 		cout << setw(10) << segments(i)*conv << setw(10) << segments(i + 1)*conv
 				<< setw(10) << segments(i + 2)*conv << endl;
 	}
@@ -89,6 +88,8 @@ void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
 	cout<<" atnumber:"<<atnumber<<endl;
 	int at=0;
 	double x,y,z,sx,sy,sz,dist;
+	double meandist[atnumber]= {0.0,0.0,0.0};
+	int segcount[atnumber] = {0,0,0};
 	for (int i = 0; i < nseg*3; i += 3) {
 		cout<<"segment:"<<i/3;
 		at = satom(i/3);
@@ -100,8 +101,15 @@ void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
 		y = (*xyz)(3*at+1);
 		z = (*xyz)(3*at+2);
 		dist = sqrt(pow(x-sx,2)+pow(y-sy,2)+pow(z-sz,2));
-		cout<<" dist:"<<dist<<endl;
+		cout<<" dist from atom:"<<dist<<endl;
+		meandist[at] = meandist[at] + dist;
+		segcount[at]+=1;
 	}
+	for (int i = 0; i < atnumber; ++i) {
+		meandist[i] = meandist[i]/segcount[i];
+		cout<<"MeanD:"<<meandist[i]<<endl;
+	}
+
 
 }
 
