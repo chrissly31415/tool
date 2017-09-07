@@ -8,9 +8,13 @@ public:
 	ToolCalcZE();
 	virtual ~ToolCalcZE();
 
-	void printSegments(bool unitsBohr=false);
-	void defineCubeSize();
+	Eigen::MatrixXd gridseg;
+
 	Eigen::Vector3d getCubeOrigin();
+
+	void moveSystem2octantI();
+	void printSegments(bool unitsBohr=false);
+	void defineCubeSize(bool roundit=true);
 	void xyz2grid(int a, int b, int c, bool verbose = false);
 	void seg2grid(int a, int b, int c, bool verbose = false);
 	void seg2voxel(int a, int b, int c, bool verbose = false);
@@ -23,7 +27,7 @@ public:
 	void grid2xyz(bool verbose = false);
 	void orderOx();
 
-	Eigen::MatrixXd gridseg;
+	static EigenCoords convert2eigen();
 
 };
 

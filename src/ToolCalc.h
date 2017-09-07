@@ -10,6 +10,7 @@
 
 #include <sys/time.h>
 #include <Eigen/Core>
+#include <math.h>
 
 #include "fitlin.h"
 #include "ran.h"
@@ -26,6 +27,7 @@ public:
 	virtual ~ToolCalc();
 	typedef Eigen::Matrix<double, 1, Eigen::Dynamic> VectorXd;
 	typedef Eigen::Matrix<int, 1, Eigen::Dynamic> VectorXi;
+	typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 3,Eigen::RowMajor>> EigenCoords;
 
 	VectorXd* xyz;
 	VectorXd* grad;
@@ -41,7 +43,7 @@ public:
 
 	//properties of calculation
 	int nproc;
-	int atnumber;
+	int atnumber=0;
 	bool calculated;
 	double energy;
 	//element names
@@ -216,7 +218,7 @@ public:
 	}
 
 	static inline double erfc_new(double z) {
-		return std::erf(z);
+		return erf(z);
 	}
 
 };

@@ -14,25 +14,26 @@ ToolCalcZE::ToolCalcZE() {
 }
 
 void ToolCalcZE::printSegments(bool unitsBohr) {
-	cout << setw(5)<< "atom" << setw(8)<< "segment" << setw(10)<< "x" << setw(10)<< "y"<< setw(10) << "z"<< endl;
+	cout << setw(5) << "atom" << setw(8) << "segment" << setw(10) << "x"
+			<< setw(10) << "y" << setw(10) << "z" << endl;
 	cout << fixed << setprecision(4);
 	double conv = 1.0;
-	if (unitsBohr) conv = ANG2BOHR;
+	if (unitsBohr)
+		conv = ANG2BOHR;
 	for (int i = 0; i < nseg * 3; i += 3) {
 		cout << setw(5) << satom(i / 3) << setw(8) << (i / 3);
-		cout << setw(10) << segments(i)*conv << setw(10) << segments(i + 1)*conv
-				<< setw(10) << segments(i + 2)*conv << endl;
+		cout << setw(10) << segments(i) * conv << setw(10)
+				<< segments(i + 1) * conv << setw(10) << segments(i + 2) * conv
+				<< endl;
 	}
 
 }
 
-void ToolCalcZE::defineCubeSize() {
+void ToolCalcZE::defineCubeSize(bool roundit) {
 	//reshape matrix - just a view
 	Eigen::MatrixXd M1(segments);
 
-	Eigen::Map<
-			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-					Eigen::RowMajor>> M2(M1.data(), M1.cols() / 3, 3);
+	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
 	Eigen::Vector3d maxv = M2.colwise().maxCoeff();
 	Eigen::Vector3d minv = M2.colwise().minCoeff();
 	double delta = 1.0;
@@ -45,6 +46,11 @@ void ToolCalcZE::defineCubeSize() {
 	if (Lz < 1E-15) {
 		Lz = maxv(2) - minv(2) + delta;
 	}
+	if (roundit) {
+		Lx = ceil(Lx);
+		Ly = ceil(Ly);
+		Lz = ceil(Lz);
+	}
 	cout << "Lx,Ly,Lz: ";
 	cout << setprecision(4);
 	cout << setw(10);
@@ -52,10 +58,9 @@ void ToolCalcZE::defineCubeSize() {
 }
 
 Eigen::Vector3d ToolCalcZE::getCubeOrigin() {
+	//??
 	Eigen::MatrixXd M1(segments);
-	Eigen::Map<
-				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-						Eigen::RowMajor>> M2(M1.data(), M1.cols() / 3, 3);
+	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
 	Eigen::Vector3d minv = M2.colwise().minCoeff();
 	double delta = 1E-1;
 	int n = minv.size();
@@ -63,53 +68,156 @@ Eigen::Vector3d ToolCalcZE::getCubeOrigin() {
 }
 
 void ToolCalcZE::showgrid() {
-	Eigen::Map<
-						Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-								Eigen::RowMajor>> M2(gridseg.data(), gridseg.rows() / 3, 3);
+	EigenCoords M2(gridseg.data(), gridseg.rows() / 3, 3);
 
-		Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
-		cout<<M2.format(NumpyFmt)<<endl;
+	Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]",
+			"[", "]");
+	cout << M2.format(NumpyFmt) << endl;
 }
 
 void ToolCalcZE::seg2qhull() {
-	cout<<"3 cosmo segments"<<endl;
-	cout<<nseg<<endl;
+	cout << "3 cosmo segments" << endl;
+	cout << nseg << endl;
 	Eigen::MatrixXd M1(segments);
-		Eigen::Map<
-				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-						Eigen::RowMajor>> M2(M1.data(), M1.cols() / 3, 3);
+	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
 	//Eigen::IOFormat QHullFmt(Eigen::FullPrecision, 0, ", ", ",\n", "", "", "", "");
 	//cout<<M2.format(QHullFmt)<<endl;
-	cout<<M2<<endl;
+	cout << M2 << endl;
+}
+
+void ToolCalcZE::moveSystem2octantI() {
+	//move segments and atom coordinates to first octant
+	double x, y, z;
+	int at = 0;
+	Eigen::MatrixXd M1(segments);
+	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
+	//find most negative x,y,z
+	Eigen::Vector3d minv = M2.colwise().minCoeff();
+	for (int i = 0; i < nseg * 3; i += 3) {
+		segments(i) = segments(i) - minv(0);
+		segments(i + 1) = segments(i + 1) - minv(1);
+		segments(i + 2) = segments(i + 2) - minv(2);
+
+	}
+	for (int i = 0; i < atnumber; ++i) {
+		x = (*xyz)(3 * i);
+		y = (*xyz)(3 * i + 1);
+		z = (*xyz)(3 * i + 2);
+		(*xyz)(3 * i) = x - minv(0);
+		(*xyz)(3 * i + 1) = y - minv(1);
+		(*xyz)(3 * i + 2) = z - minv(2);
+	}
+
 }
 
 void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
-	cout<<"Fitting sphere to segments"<<endl;
-	cout<<" atnumber:"<<atnumber<<endl;
-	int at=0;
-	double x,y,z,sx,sy,sz,dist;
-	double meandist[atnumber]= {0.0,0.0,0.0};
-	int segcount[atnumber] = {0,0,0};
-	for (int i = 0; i < nseg*3; i += 3) {
-		cout<<"segment:"<<i/3;
-		at = satom(i/3);
-		cout<<" at:"<<at;
+	cout << "Fitting sphere to segments" << endl;
+	cout << " atnumber:" << atnumber << endl;
+	int at = 0;
+	double x, y, z, sx, sy, sz, dist;
+	double meandist[atnumber];
+	int segcount[atnumber];
+	memset(meandist, 0.0, atnumber * sizeof(double));
+	memset(segcount, 0, sizeof segcount);
+	for (int i = 0; i < nseg * 3; i += 3) {
+		cout << "segment:" << i / 3;
+		cout << " at:" << at;
 		sx = segments(i);
-		sy = segments(i+1);
-		sz = segments(i+2);
-		x = (*xyz)(3*at);
-		y = (*xyz)(3*at+1);
-		z = (*xyz)(3*at+2);
-		dist = sqrt(pow(x-sx,2)+pow(y-sy,2)+pow(z-sz,2));
-		cout<<" dist from atom:"<<dist<<endl;
+		sy = segments(i + 1);
+		sz = segments(i + 2);
+
+		at = satom(i / 3);
+		x = (*xyz)(3 * at);
+		y = (*xyz)(3 * at + 1);
+		z = (*xyz)(3 * at + 2);
+		dist = sqrt(pow(x - sx, 2) + pow(y - sy, 2) + pow(z - sz, 2));
 		meandist[at] = meandist[at] + dist;
-		segcount[at]+=1;
+		segcount[at] += 1;
+		cout << " dist from atom:" << dist << " mean:" << meandist[at]
+				<< " segcount" << segcount[at] << endl;
 	}
 	for (int i = 0; i < atnumber; ++i) {
-		meandist[i] = meandist[i]/segcount[i];
-		cout<<"MeanD:"<<meandist[i]<<endl;
+		meandist[i] = meandist[i] / segcount[i];
+		cout << "atom:" << i << " MeanD:" << meandist[i] << endl;
 	}
+	ToolIO::moltoFile(this);
+	moveSystem2octantI();
+	ToolIO::moltoFile(this);
+	Eigen::MatrixXd M1(segments);
+	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
 
+	//Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]",
+	//		"[", "]");
+
+	//cout << M2.format(NumpyFmt) << endl;
+
+	//ToolIO::eigencoord2file(M2,"coords.csv");
+	defineCubeSize();
+	double side_length = 0.25;
+	int maxi = (int) Lx / side_length;
+	int maxj = (int) Ly / side_length;
+	int maxk = (int) Lz / side_length;
+
+	//should be col major...
+	Eigen::VectorXd voxels = Eigen::VectorXd::Zero(maxi * maxj * maxk);
+
+	cout << "maxl (x):" << maxi << endl;
+	cout << "maxl (y):" << maxj << endl;
+	cout << "maxl (z):" << maxk << endl;
+	cout << "cube total voxels:" << voxels.rows() << endl;
+	double xpos = 0.0;
+	double ypos = 0.0;
+	double zpos = 0.0;
+	double dist1 = 0.0;
+	int pos_counter = 0;
+	for (int i = 0; i < maxi; ++i) {
+		xpos = i * side_length + 0.5 * side_length;
+		for (int j = 0; j < maxj; ++j) {
+			ypos = j * side_length + 0.5 * side_length;
+			for (int k = 0; k < maxk; ++k) {
+				zpos = k * side_length + 0.5 * side_length;
+				for (int l = 0; l < atnumber; ++l) {
+					x = (*xyz)(3 * l);
+					y = (*xyz)(3 * l + 1);
+					z = (*xyz)(3 * l + 2);
+					dist1 = sqrt(
+							pow(x - xpos, 2) + pow(y - ypos, 2)
+									+ pow(z - zpos, 2));
+
+					if (dist1 < meandist[l]) {
+						//voxels(pos_counter) = 1.0;
+						voxels(pos_counter) = atom_nr[l];
+//						cout << "i: xpos: x:" << i << " " << xpos << " " << x
+//								<< endl;
+//						cout << "j: ypos: y:" << j << " " << ypos << "" << y
+//								<< endl;
+//						cout << "k: zpos: z:" << k << " " << zpos << " " << z
+//								<< endl;
+//						cout << "dist:" << dist1 << " mean:" << meandist[l]
+//								<< endl;
+
+						//cout << "pos_counter:" << pos_counter << endl;
+						break;
+					} else {
+						voxels(pos_counter) = 0.0;
+					}
+
+				}
+				pos_counter += 1;
+			}
+		}
+	}
+	cout<<"counter:"<<pos_counter<<endl;
+	cout<<"voxels:"<<voxels.sum()<<endl;
+	cout<<"density:"<<voxels.sum()/voxels.size()<<endl;
+	ToolIO::eigencoord2file(voxels,"voxels.csv");
+	//save array dimension
+	std::ofstream file("voxels_dim.csv");
+		if (file.is_open()) {
+			file <<"# voxel dimension"<<endl;
+			file <<maxi<<","<<maxj<<","<<maxk<< endl;
+		}
+		file.close();
 
 }
 
@@ -117,7 +225,7 @@ void ToolCalcZE::seg2grid(int na, int nb, int nc, bool verbose) {
 	//need list of grid points?
 	//C   2 4 0
 	//C   1 4 9
-	gridseg = Eigen::MatrixXd::Zero(nseg*3,1);
+	gridseg = Eigen::MatrixXd::Zero(nseg * 3, 1);
 	defineCubeSize();
 	gx = na;
 	gy = nb;
@@ -135,23 +243,23 @@ void ToolCalcZE::seg2grid(int na, int nb, int nc, bool verbose) {
 		cubex = cubeo(0) - spacex;
 		for (int a = 0; a < na; a++) {
 			cubex = cubex + spacex;
-			cubey = cubeo(1)- spacey;
+			cubey = cubeo(1) - spacey;
 			for (int b = 0; b < nb; b++) {
 				cubey = cubey + spacey;
-				cubez = cubeo(2)- spacez;
+				cubez = cubeo(2) - spacez;
 				for (int c = 0; c < nc; c++) {
 					cubez = cubez + spacez;
 
-
-					if (((segments)(i) > cubex) && ((segments)(i) < (cubex + spacex))
+					if (((segments)(i) > cubex)
+							&& ((segments)(i) < (cubex + spacex))
 							&& (((segments)(i + 1) > cubey)
 									&& ((segments)(i + 1) < (cubey + spacey)))
 							&& (((segments)(i + 2) > cubez)
 									&& ((segments)(i + 2) < (cubez + spacez)))) {
 						hit++;
 						gridseg(i) = a;
-						gridseg(i+1) = b;
-						gridseg(i+2) = c;
+						gridseg(i + 1) = b;
+						gridseg(i + 2) = c;
 					}
 				}
 			}

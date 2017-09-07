@@ -1,5 +1,6 @@
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
 #include <string.h>
 #include <fstream>
 #include <iomanip>
@@ -430,13 +431,14 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 
 			if (atoms_section && boost::regex_search(line, matches, atpos)) {
 				for (int i = 1; i < 4; ++i) {
-					lxyz[pos] = string2double(matches[i].str())/ANG2BOHR;
+					lxyz[pos] = string2double(matches[i].str()) / ANG2BOHR;
 					pos++;
 				}
 				line = matches[4].str();
+
 				latoms[(pos - 1) / 3] = line;
 				for (int i = 0; i < 87; i++) {
-					if (line == ToolCalc::elements[i]) {
+					if (boost::iequals(line, ToolCalc::elements[i])) {
 						latom_nr[(pos - 1) / 3] = i;
 					}
 				}
@@ -450,7 +452,8 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 					&& boost::regex_search(line, matches, segments_re)) {
 				seg_atom[nseg / 3] = string2integer(matches[1].str());
 				for (int i = 2; i < 5; ++i) {
-					segment_pos[nseg] = string2double(matches[i].str())/ANG2BOHR;
+					segment_pos[nseg] = string2double(
+							matches[i].str())/ANG2BOHR;
 					nseg++;
 				}
 				sq[nseg / 3] = string2double(matches[5].str());
@@ -483,21 +486,20 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 	nseg = nseg / 3;
 	cout << "Number of segments:" << (nseg) << endl;
 	calculation.nseg = nseg;
-	calculation.segments = ToolCalc::VectorXd::Zero(nseg*3);
+	calculation.segments = ToolCalc::VectorXd::Zero(nseg * 3);
 	calculation.scharge = ToolCalc::VectorXd::Zero(nseg);
 	calculation.sarea = ToolCalc::VectorXd::Zero(nseg);
 	calculation.satom = ToolCalc::VectorXi::Zero(nseg);
-	for (int i = 0; i < nseg*3; i += 3) {
+	for (int i = 0; i < nseg * 3; i += 3) {
 		calculation.segments(i) = segment_pos[i];
 		calculation.segments(i + 1) = segment_pos[i + 1];
 		calculation.segments(i + 2) = segment_pos[i + 2];
 
-		calculation.satom(i/3) = seg_atom[i/3]-1;
-		calculation.scharge(i/3) = sq[i/3];
-		calculation.sarea(i/3) = sa[i/3];
+		calculation.satom(i / 3) = seg_atom[i / 3] - 1;
+		calculation.scharge(i / 3) = sq[i / 3];
+		calculation.sarea(i / 3) = sa[i / 3];
 
 	}
-
 
 	cout << "Parsing .cosmo file - no atoms:" << calculation.atnumber << endl;
 
@@ -677,33 +679,46 @@ void ToolIO::printGrad(ToolCalc &calculation) {
 			<< calculation.gradmaxelem << ": " << calculation.gradinfnorm
 			<< endl;
 }
+
+//static needs only to be declared in header
+void ToolIO::eigencoord2file(Eigen::MatrixXd coords, const char* filename) {
+	//Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
+	const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,
+			Eigen::DontAlignCols, ", ", "\n");
+	std::ofstream file(filename);
+	if (file.is_open()) {
+		file << coords.format(CSVFormat) << endl;
+	}
+	file.close();
+}
+
 //print to file
-void ToolIO::moltoFile(ToolCalc &calculation) {
+void ToolIO::moltoFile(ToolCalc* calculation) {
 	ofstream f;
 	//cout << "being called..."<< endl;
 	f.open("movie.xyz", ios::app);
-	f << " " << calculation.atnumber << endl;
-	if (calculation.calculated == true) {
+	f << " " << calculation->atnumber << endl;
+	if (calculation->calculated == true) {
 		if (toolc::ctype == "PP") {
 			f.precision(12);
-			f << setw(12) << calculation.energy * 27.211 << endl;
+			f << setw(12) << calculation->energy * 27.211 << endl;
 		} else {
 			f.precision(12);
-			f << setw(12) << calculation.energy << endl;
+			f << setw(12) << calculation->energy << endl;
 		}
 
 	}
 	//Ausgabe
 	f.precision(8);
 	int k = 0;
-	for (int i = 0; i < calculation.atnumber * 3; i++) {
+	for (int i = 0; i < calculation->atnumber * 3; i++) {
 		if (i % 3 == 0) {
 			//somehow i is changed when given here????
-			f << fixed << calculation.atoms[k] << "\t";
+			f << fixed << calculation->atoms[k] << "\t";
 			k++;
 		}
 		//cout << "Positions: " <<endl << *calculation.xyz;
-		f << setw(12) << (*calculation.xyz)(i) << "\t";
+		f << setw(12) << (*calculation->xyz)(i) << "\t";
 		if ((i + 1) % 3 == 0) {
 			f << endl;
 		}
