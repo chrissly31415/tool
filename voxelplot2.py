@@ -1,20 +1,22 @@
-import matplotlib
-#matplotlib.use('agg')
-import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-
-print matplotlib.__version__
-
+import mayavi
+from mayavi import mlab
 # prepare some coordinates
 voxels = np.genfromtxt('voxels.csv', delimiter=',')
 dim = np.genfromtxt('voxels_dim.csv', delimiter=',')
 dim = dim.astype(np.int)
-print dim
+print voxels.shape
 voxels = np.reshape(voxels,(dim[0],dim[1],dim[2]))
-np.savetxt("tmp.csv",voxels,fmt='%5r')
 print voxels.shape
 print (voxels>0).sum()
+
+xx,yy,zz =  np.where(voxels>0)
+s = voxels.flatten()
+s = s[np.where(s>0)]
+print xx.shape
+print yy.shape
+print zz.shape
+print s.shape
 
 # set the colors of each object
 colors = np.empty(voxels.shape, dtype=object)
@@ -25,15 +27,12 @@ colors[voxels==7] = 'blue'
 colors[voxels==17] = 'green'  
 
 # and plot everything
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-#ax.voxels(voxels, facecolors=colors, edgecolor='k')
-ax.voxels(voxels, facecolors=colors, edgecolor='k')
-maxlim = np.max(dim)
-ax.set_xlim(0,maxlim)
-ax.set_ylim(0,maxlim)
-ax.set_zlim(0,maxlim)
+#mlab.points3d(xx, yy, zz,s,  
+#                     mode="cube",
+#	             opacity=0.5,
+#                     scale_factor=1)
 
-plt.show()
-
+voxels[voxels>0] = 1 
+mlab.contour3d(voxels,contours=2, transparent=True)
+mlab.show()
 

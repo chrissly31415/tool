@@ -120,8 +120,8 @@ void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
 	memset(meandist, 0.0, atnumber * sizeof(double));
 	memset(segcount, 0, sizeof segcount);
 	for (int i = 0; i < nseg * 3; i += 3) {
-		cout << "segment:" << i / 3;
-		cout << " at:" << at;
+		//cout << "segment:" << i / 3;
+		//cout << " at:" << at;
 		sx = segments(i);
 		sy = segments(i + 1);
 		sz = segments(i + 2);
@@ -133,8 +133,8 @@ void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
 		dist = sqrt(pow(x - sx, 2) + pow(y - sy, 2) + pow(z - sz, 2));
 		meandist[at] = meandist[at] + dist;
 		segcount[at] += 1;
-		cout << " dist from atom:" << dist << " mean:" << meandist[at]
-				<< " segcount" << segcount[at] << endl;
+		//cout << " dist from atom:" << dist << " mean:" << meandist[at]
+		//		<< " segcount" << segcount[at] << endl;
 	}
 	for (int i = 0; i < atnumber; ++i) {
 		meandist[i] = meandist[i] / segcount[i];
@@ -153,7 +153,7 @@ void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
 
 	//ToolIO::eigencoord2file(M2,"coords.csv");
 	defineCubeSize();
-	double side_length = 0.25;
+	double side_length = 0.2;
 	int maxi = (int) Lx / side_length;
 	int maxj = (int) Ly / side_length;
 	int maxk = (int) Lz / side_length;
@@ -207,6 +207,7 @@ void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
 			}
 		}
 	}
+	cout<<"stepsize:"<<side_length<<endl;
 	cout<<"counter:"<<pos_counter<<endl;
 	cout<<"voxels:"<<voxels.sum()<<endl;
 	cout<<"density:"<<voxels.sum()/voxels.size()<<endl;
