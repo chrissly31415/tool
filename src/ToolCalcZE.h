@@ -13,11 +13,12 @@ public:
 	Eigen::Vector3d getCubeOrigin();
 
 	void moveSystem2octantI();
+	void rotateSegments(int axis, double phi);
 	void printSegments(bool unitsBohr=false);
 	void defineCubeSize(bool roundit=true);
 	void xyz2grid(int a, int b, int c, bool verbose = false);
 	void seg2grid(int a, int b, int c, bool verbose = false);
-	void seg2voxel(int a, int b, int c, bool verbose = false);
+	void seg2voxel(bool verbose = false);
 	void seg2qhull();
 	void showgrid();
 	void gridout();

@@ -19,7 +19,7 @@ public:
 	void fractoFile(ToolCalc &a, bool shel=false, bool peridoic=false);
 	void printGrad(ToolCalc &A);
 	static void moltoFile(ToolCalc* A);
-	static void eigencoord2file(Eigen::MatrixXd eigenCoords, const char* filename);
+	static void eigencoord2file(Eigen::MatrixXd eigenCoords, string filename);
 	void moltoFile2(int &atnumber, double &energy, string atoms[], ToolCalc::VectorXd &xyz,  string core_shell[]=NULL, int nr_shells=0, bool shel=false, string type="LJ");
 	void fractoFile2(int &atnumber, double &energy, string atoms[], ToolCalc::VectorXd &xyz,  string core_shell[]=NULL, int nr_shells=0, bool shel=false, double Lx=10, double Ly=10, double Lz=10);
 	void printRDF(int &atnumber, double &energy, string atoms[], ToolCalc::VectorXd &xyz,double cutoff=25, double Lx=10, double Ly=10, double Lz=10);
@@ -32,6 +32,8 @@ public:
 
 	int string2integer(string);
 	double string2double(string);
+
+
 
 };
 

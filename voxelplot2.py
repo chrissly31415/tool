@@ -1,12 +1,20 @@
+#!/usr/bin/python
+# coding: utf-8
+
+import sys
 import numpy as np
 import mayavi
+import math
 from mayavi import mlab
 # prepare some coordinates
-voxels = np.genfromtxt('voxels.csv', delimiter=',')
-dim = np.genfromtxt('voxels_dim.csv', delimiter=',')
-dim = dim.astype(np.int)
-print voxels.shape
-voxels = np.reshape(voxels,(dim[0],dim[1],dim[2]))
+voxels = np.genfromtxt(sys.argv[1], delimiter=',')
+#dim = np.genfromtxt('voxels_dim.csv', delimiter=',')
+#dim = dim.astype(np.int)
+n = voxels.shape[0]
+print n
+dim = int(math.floor(np.power(n,1/3.0)))+1
+print dim
+voxels = np.reshape(voxels,(dim,dim,dim))
 print voxels.shape
 print (voxels>0).sum()
 
@@ -26,13 +34,15 @@ colors[voxels==8] = 'red'
 colors[voxels==7] = 'blue'  
 colors[voxels==17] = 'green'  
 
-# and plot everything
-#mlab.points3d(xx, yy, zz,s,  
-#                     mode="cube",
-#	             opacity=0.5,
-#                     scale_factor=1)
-
 voxels[voxels>0] = 1 
-mlab.contour3d(voxels,contours=2, transparent=True)
+# and plot everything
+mlab.points3d(xx, yy, zz,s,  
+                     mode="cube",
+	             colormap = "YlOrBr",
+                     scale_mode='none',
+                    scale_factor=1)
+
+#mlab.contour3d(voxels,contours=2, transparent=True)
+mlab.colorbar()
 mlab.show()
 

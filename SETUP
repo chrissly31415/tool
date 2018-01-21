@@ -1,8 +1,13 @@
-ZERNICKE
-periodic
-cell 20.0 20.0 20.0
-END
+ZERNIKE
 COORD
-#ethyl_acetate.cosmo
-h2o.cosmo
+#cosmo_files/ethyl_acetate.cosmo
+#cosmo_files/perfluorohexadecane_c0.cosmo
+#cosmo_files/1,5-dicyclohexyl-1h-imidazole_c0.cosmo
+#/home/loschen/workspace/toolc/cosmo_files/h2o.cosmo
+/media/loschen/NEWDATA/MP_DATA/MP_COSMO_FINE/(1r)-endo-fenchylalcohol_c0.cosmo
+#cosmo_files/cyclohexene_c0.cosmo
 END
+VOXELSTEP 0.2
+ROTANGLE 45.0
+ROTAXIS -1
+

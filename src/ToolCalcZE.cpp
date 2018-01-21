@@ -51,10 +51,13 @@ void ToolCalcZE::defineCubeSize(bool roundit) {
 		Ly = ceil(Ly);
 		Lz = ceil(Lz);
 	}
-	cout << "Lx,Ly,Lz: ";
-	cout << setprecision(4);
-	cout << setw(10);
-	cout << Lx << " " << Ly << " " << Lz << endl;
+	//make it square
+	Eigen::Vector3f L;
+	L << Lx, Ly, Lz;
+	Lx = L.maxCoeff();
+	Ly = L.maxCoeff();
+	Lz = L.maxCoeff();
+
 }
 
 Eigen::Vector3d ToolCalcZE::getCubeOrigin() {
@@ -88,137 +91,288 @@ void ToolCalcZE::seg2qhull() {
 void ToolCalcZE::moveSystem2octantI() {
 	//move segments and atom coordinates to first octant
 	double x, y, z;
-	int at = 0;
+	double delta = voxelstep;
 	Eigen::MatrixXd M1(segments);
 	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
 	//find most negative x,y,z
 	Eigen::Vector3d minv = M2.colwise().minCoeff();
 	for (int i = 0; i < nseg * 3; i += 3) {
-		segments(i) = segments(i) - minv(0);
-		segments(i + 1) = segments(i + 1) - minv(1);
-		segments(i + 2) = segments(i + 2) - minv(2);
+		segments(i) = segments(i) - minv(0) + delta;
+		segments(i + 1) = segments(i + 1) - minv(1) + delta;
+		segments(i + 2) = segments(i + 2) - minv(2) + delta;
 
 	}
+
 	for (int i = 0; i < atnumber; ++i) {
 		x = (*xyz)(3 * i);
 		y = (*xyz)(3 * i + 1);
 		z = (*xyz)(3 * i + 2);
-		(*xyz)(3 * i) = x - minv(0);
-		(*xyz)(3 * i + 1) = y - minv(1);
-		(*xyz)(3 * i + 2) = z - minv(2);
+		(*xyz)(3 * i) = x - minv(0) + delta;
+		(*xyz)(3 * i + 1) = y - minv(1) + delta;
+		(*xyz)(3 * i + 2) = z - minv(2) + delta;
 	}
-
 }
 
-void ToolCalcZE::seg2voxel(int na, int nb, int nc, bool verbose) {
-	cout << "Fitting sphere to segments" << endl;
-	cout << " atnumber:" << atnumber << endl;
-	int at = 0;
-	double x, y, z, sx, sy, sz, dist;
+void ToolCalcZE::rotateSegments(int axis, double phi) {
+	cout << "Rotation of segments around axis:" << axis << " using phi=" << phi
+			<< "\n";
+	phi = phi * 3.14159265 / 180.0;
+	Eigen::MatrixXd R(3, 3);
+	if (axis == 0) {
+		R << 1.0, 0.0, 0.0, 0.0, cos(phi), -sin(phi), 0.0, sin(phi), cos(phi);
+	} else if (axis == 1) {
+		R << cos(phi), 0.0, sin(phi), 0.0, 1.0, 0.0, -sin(phi), 0.0, cos(phi);
+	} else if (axis == 2) {
+		R << cos(phi), -sin(phi), 0.0, sin(phi), cos(phi), 0.0, 0.0, 0.0, 1.0;
+	}
+	//cout << R << endl;
+	//rotate segments
+	double x, y, z;
+	for (int i = 0; i < nseg * 3; i += 3) {
+		x = R(0, 0) * segments(i) + R(0, 1) * segments(i + 1)
+				+ R(0, 2) * segments(i + 2);
+		y = R(1, 0) * segments(i) + R(1, 1) * segments(i + 1)
+				+ R(1, 2) * segments(i + 2);
+		z = R(2, 0) * segments(i) + R(2, 1) * segments(i + 1)
+				+ R(2, 2) * segments(i + 2);
+
+		segments(i) = x;
+		segments(i + 1) = y;
+		segments(i + 2) = z;
+	}
+}
+
+void ToolCalcZE::seg2voxel(bool verbose) {
+	int mode = 0;
+	cout << "\nCreating voxel grid..." << endl;
+	//cout << " atnumber:" << atnumber << endl;
+	int at;
+	double x, y, z, sx, sy, sz, dist, q, sigma, area;
 	double meandist[atnumber];
+	vector<double> maxsig(atnumber);
+
 	int segcount[atnumber];
 	memset(meandist, 0.0, atnumber * sizeof(double));
 	memset(segcount, 0, sizeof segcount);
+	//preparation loop, only necessary for fast algo without checking for segments
 	for (int i = 0; i < nseg * 3; i += 3) {
-		//cout << "segment:" << i / 3;
-		//cout << " at:" << at;
+		//get segment positions
 		sx = segments(i);
 		sy = segments(i + 1);
 		sz = segments(i + 2);
-
+		//get atom number
 		at = satom(i / 3);
+		//get atom position
 		x = (*xyz)(3 * at);
 		y = (*xyz)(3 * at + 1);
 		z = (*xyz)(3 * at + 2);
+		//mean distance between segments and atom
 		dist = sqrt(pow(x - sx, 2) + pow(y - sy, 2) + pow(z - sz, 2));
 		meandist[at] = meandist[at] + dist;
 		segcount[at] += 1;
-		//cout << " dist from atom:" << dist << " mean:" << meandist[at]
-		//		<< " segcount" << segcount[at] << endl;
+
+		sigma = scharge(i / 3);
+		if (abs(sigma) > abs(maxsig[at]))
+			maxsig[at] = sigma;
 	}
 	for (int i = 0; i < atnumber; ++i) {
 		meandist[i] = meandist[i] / segcount[i];
-		cout << "atom:" << i << " MeanD:" << meandist[i] << endl;
+		//cout << "atom:" << i << " MeanD:" << meandist[i] << endl;
+		//cout << "max.sigma:" << i << " :" << maxsig[i] << endl;
+
 	}
-	ToolIO::moltoFile(this);
+	//ToolIO::moltoFile(this);
 	moveSystem2octantI();
-	ToolIO::moltoFile(this);
+	//ToolIO::moltoFile(this);
 	Eigen::MatrixXd M1(segments);
 	EigenCoords M2(M1.data(), M1.cols() / 3, 3);
 
 	//Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]",
 	//		"[", "]");
-
 	//cout << M2.format(NumpyFmt) << endl;
 
 	//ToolIO::eigencoord2file(M2,"coords.csv");
 	defineCubeSize();
-	double side_length = 0.2;
+	double side_length = voxelstep;
 	int maxi = (int) Lx / side_length;
 	int maxj = (int) Ly / side_length;
 	int maxk = (int) Lz / side_length;
 
-	//should be col major...
+	//voxel 1D vector
 	Eigen::VectorXd voxels = Eigen::VectorXd::Zero(maxi * maxj * maxk);
+	//voxel occupations for sigma averaging
+	Eigen::VectorXi occ = Eigen::VectorXi::Zero(maxi * maxj * maxk);
 
-	cout << "maxl (x):" << maxi << endl;
-	cout << "maxl (y):" << maxj << endl;
-	cout << "maxl (z):" << maxk << endl;
-	cout << "cube total voxels:" << voxels.rows() << endl;
+	//cout << "no. of voxels in cube:" << voxels.rows() << endl;
 	double xpos = 0.0;
 	double ypos = 0.0;
 	double zpos = 0.0;
-	double dist1 = 0.0;
+
 	int pos_counter = 0;
-	for (int i = 0; i < maxi; ++i) {
-		xpos = i * side_length + 0.5 * side_length;
-		for (int j = 0; j < maxj; ++j) {
-			ypos = j * side_length + 0.5 * side_length;
-			for (int k = 0; k < maxk; ++k) {
-				zpos = k * side_length + 0.5 * side_length;
-				for (int l = 0; l < atnumber; ++l) {
-					x = (*xyz)(3 * l);
-					y = (*xyz)(3 * l + 1);
-					z = (*xyz)(3 * l + 2);
-					dist1 = sqrt(
-							pow(x - xpos, 2) + pow(y - ypos, 2)
-									+ pow(z - zpos, 2));
+	//for every grid point check if voxels are on/off
+	//fast mode 0, we shoud iterate only locally e.g. in 10x10x10 cubes starting with icheck!
+	if (mode == 0) {
+		cout<<"atoms:"<<atnumber<<endl;
+		for (int n = 0; n < atnumber; ++n) {
+			//atom by atom
+			for (int l = 0; l < nseg * 3; l += 3) {
+				//get segment positions
+				sx = segments(l);
+				sy = segments(l + 1);
+				sz = segments(l + 2);
+				at = satom(l / 3);
+				if (at!=n) continue;
+//			x = (*xyz)(3 * at);
+//			y = (*xyz)(3 * at + 1);
+//			z = (*xyz)(3 * at + 2);
+//			//get norm vector
+//			double nx = sx - x;
+//			double ny = sy - y;
+//			double nz = sz - z;
+				int icheck = sx / side_length - 0.5;
+				int jcheck = sy / side_length - 0.5;
+				int kcheck = sz / side_length - 0.5;
+				for (int m = 0; m < nseg * 3; m += 3) {
+					sx = segments(m);
+					sy = segments(m + 1);
+					sz = segments(m + 2);
+					at = satom(m / 3);
+					if (at!=n) continue;
+					//make little cubes around central segment
+					int csize = 5;
+					for (int i = -csize;
+							(icheck + i) < maxi && (icheck + i) >= 0
+									&& i <= csize; ++i) {
 
-					if (dist1 < meandist[l]) {
-						//voxels(pos_counter) = 1.0;
-						voxels(pos_counter) = atom_nr[l];
-//						cout << "i: xpos: x:" << i << " " << xpos << " " << x
-//								<< endl;
-//						cout << "j: ypos: y:" << j << " " << ypos << "" << y
-//								<< endl;
-//						cout << "k: zpos: z:" << k << " " << zpos << " " << z
-//								<< endl;
-//						cout << "dist:" << dist1 << " mean:" << meandist[l]
-//								<< endl;
-
-						//cout << "pos_counter:" << pos_counter << endl;
-						break;
-					} else {
-						voxels(pos_counter) = 0.0;
+						xpos = (icheck + i) * side_length + 0.5 * side_length;
+						//cout<<"icheck: "<<icheck<<"i:"<<i<<"xpos:"<<xpos<<"maxi:"<<maxi<<endl;
+						for (int j = -csize;
+								(jcheck + j) < maxj && (jcheck + j) >= 0
+										&& j <= csize; ++j) {
+							ypos = (jcheck + j) * side_length
+									+ 0.5 * side_length;
+							for (int k = -csize;
+									(kcheck + k) < maxk && (kcheck + k) >= 0
+											&& k <= csize; ++k) {
+								zpos = (kcheck + k) * side_length
+										+ 0.5 * side_length;
+								pos_counter = ((icheck + i) * maxi
+										+ (jcheck + j)) * maxj + (kcheck + k);
+								dist = sqrt(
+										pow(xpos - sx, 2) + pow(ypos - sy, 2)
+												+ pow(zpos - sz, 2));
+								//now should average again!
+								if (dist <= 3 * side_length) {
+									occ(pos_counter) += 1;
+									q = scharge(l / 3);
+									area = sarea(l / 3);
+									sigma = 1.0 + 1.0 * q / area;
+									//moving average
+									voxels(pos_counter) = voxels(pos_counter)
+											- voxels(pos_counter)
+													/ (double) occ(pos_counter);
+									voxels(pos_counter) = voxels(pos_counter)
+											+ sigma / (double) occ(pos_counter);
+									voxels(pos_counter) = pos_counter;
+									voxels(pos_counter) = n+1;
+								}
+							}
+						}
 					}
-
 				}
-				pos_counter += 1;
+			}
+		}
+	//simple segment mode
+	} else if (mode == 1) {
+		for (int i = 0; i < maxi; ++i) {
+			xpos = i * side_length + 0.5 * side_length;
+			for (int j = 0; j < maxj; ++j) {
+				ypos = j * side_length + 0.5 * side_length;
+				for (int k = 0; k < maxk; ++k) {
+					zpos = k * side_length + 0.5 * side_length;
+					//check which segment is there
+					sigma = 0.0;
+					for (int l = 0; l < nseg * 3; l += 3) {
+						//get segment positions
+						sx = segments(l);
+						sy = segments(l + 1);
+						sz = segments(l + 2);
+						at = satom(l / 3);
+						dist = sqrt(
+								pow(xpos - sx, 2) + pow(ypos - sy, 2)
+										+ pow(zpos - sz, 2));
+						if (dist <= 3 * side_length) {
+							q = scharge(l / 3);
+							area = sarea(l / 3);
+							sigma = 1.0 + 10.0 * q / area;
+							sigma = pos_counter;
+							voxels(pos_counter) = sigma;
+							break;
+						}
+					}
+					voxels(pos_counter) = sigma;
+					pos_counter += 1;
+				}
+			}
+		}
+		//mean dist mode
+	} else {
+		for (int i = 0; i < maxi; ++i) {
+			xpos = i * side_length + 0.5 * side_length;
+			for (int j = 0; j < maxj; ++j) {
+				ypos = j * side_length + 0.5 * side_length;
+				for (int k = 0; k < maxk; ++k) {
+					zpos = k * side_length + 0.5 * side_length;
+					for (int l = 0; l < atnumber; ++l) {
+						x = (*xyz)(3 * l);
+						y = (*xyz)(3 * l + 1);
+						z = (*xyz)(3 * l + 2);
+						dist = sqrt(
+								pow(x - xpos, 2) + pow(y - ypos, 2)
+										+ pow(z - zpos, 2));
+						//check if we are at a grid position outside or inside of molecule
+						// surface
+						if (dist < meandist[l]) {
+							if (abs(dist - meandist[l]) < side_length
+									&& xpos < 2.5) {
+								//
+								//cout << "JUHU surface:" << 1.0 + maxsig[l]
+								//		<< " dist:" << dist1 << " mean dist:"
+								//		<< meandist[l] << endl;
+								voxels(pos_counter) = 1.0 + maxsig[l];
+							} else {
+								//switch on if inside
+								voxels(pos_counter) = 0.0;
+							}
+							break;
+						} else {
+							//switch off if outside
+							voxels(pos_counter) = 0.0;
+						}
+					}
+					pos_counter += 1;
+				}
 			}
 		}
 	}
-	cout<<"stepsize:"<<side_length<<endl;
-	cout<<"counter:"<<pos_counter<<endl;
-	cout<<"voxels:"<<voxels.sum()<<endl;
-	cout<<"density:"<<voxels.sum()/voxels.size()<<endl;
-	ToolIO::eigencoord2file(voxels,"voxels.csv");
+
+	cout << "Lx,Ly,Lz: ";
+	cout << setprecision(4);
+	cout << Lx << " " << Ly << " " << Lz << endl;
+	cout << "Stepsize: " << side_length << endl;
+	cout << "Counter : " << pos_counter << endl;
+	cout << "Voxels  : " << voxels.sum() << endl;
+
+	//cout << "Density : " << voxels.sum() / ((double) voxels.size()) << endl;
+	cout << "Name    :" << jobname << endl;
+	ToolIO::eigencoord2file(voxels, jobname + ".csv");
 	//save array dimension
-	std::ofstream file("voxels_dim.csv");
-		if (file.is_open()) {
-			file <<"# voxel dimension"<<endl;
-			file <<maxi<<","<<maxj<<","<<maxk<< endl;
-		}
-		file.close();
+	//std::ofstream file(jobname+"_dim.csv");
+	//if (file.is_open()) {
+	//	file << "# voxel dimension" << endl;
+	//	file << maxi << "," << maxj << "," << maxk << endl;
+	//}
+	//file.close();
 
 }
 

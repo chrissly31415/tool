@@ -6,7 +6,7 @@
 
 using namespace std;
 
-//Concstructor with variable initialization
+//Constructor with variable initialization
 ToolCalc::ToolCalc() {
 	atnumber = 0;
 	calculated = false;
@@ -25,6 +25,10 @@ ToolCalc::ToolCalc() {
 	shell_modell = false;
 	scutoff = 0.6;
 	rseed = 123;
+	 rotation_angle=0.0;
+		 rotation_axis=-1;
+		 voxelstep=0.1;
+
 }
 //PES
 string ToolCalc::elements[87] = { "X", "H", "He", "Li", "Be", "B", "C", "N",
@@ -105,6 +109,32 @@ void ToolCalc::createRandom(Ran &myRan, double radius) {
 		(*xyz)(i) = (*xyz)(i) * (1 - (*moveMat)(i)) + j * (*moveMat)(i);
 	}
 }
+
+//rotate structure
+void ToolCalc::rotateCoordinates(int axis, double phi) {
+	cout << "Rotation of coordinates around axis:"<<axis<<" using phi="<<phi<<"\n";
+
+	phi = phi * 3.14159265 / 180.0;
+	Eigen::MatrixXd R(3, 3);
+	if (axis == 0) {
+		R << 1.0, 0.0, 0.0, 0.0, cos(phi), -sin(phi), 0.0, sin(phi), cos(phi);
+	} else if (axis == 1) {
+		R << cos(phi), 0.0, sin(phi), 0.0, 1.0, 0.0, -sin(phi), 0.0, cos(phi);
+	} else if (axis == 2) {
+		R << cos(phi), -sin(phi), 0.0, sin(phi), cos(phi), 0.0, 0.0, 0.0, 1.0;
+	}
+	//rotate atoms
+	double x, y, z;
+	for (int i = 0; i < atnumber; ++i) {
+			x = (*xyz)(3 * i);
+			y = (*xyz)(3 * i + 1);
+			z = (*xyz)(3 * i + 2);
+			(*xyz)(3 * i) = R(0, 0) * x + R(0, 1) * y+ R(0, 2) * z;
+			(*xyz)(3 * i + 1) = R(1, 0) * x + R(1, 1) * y+ R(1, 2) * z;
+			(*xyz)(3 * i + 2) = R(2, 0) * x + R(2, 1) * y+ R(2, 2) * z;
+	}
+}
+
 
 //sets xyz-coordinates
 void ToolCalc::setXYZ(VectorXd xyz_new) {

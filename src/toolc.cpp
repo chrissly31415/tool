@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 		myECalc->step = 0.1;
 		myECalc->cutoff = 35;
 		myECalc->dipole_cor = true;
-	} else if (toolc::ctype == "ZERNICKE") {
+	} else if (toolc::ctype == "ZERNIKE") {
 		myECalc = new ToolCalcZE();
 
 	} else {
@@ -76,11 +76,17 @@ int main(int argc, char *argv[]) {
 		myECalc->moveRandom(myRan, .5);
 		myECalc->basin_hopping(myRan, 0.5, false);
 		//(*myECalc).monte_carlo_sampling(myRan, 2);
-	} else if (toolc::ctype == "ZERNICKE") {
+	} else if (toolc::ctype == "ZERNIKE") {
 		ToolCalcZE* zeCalc = dynamic_cast<ToolCalcZE*>(myECalc);
 
-		zeCalc->printSegments(false);
-		zeCalc->seg2voxel(32,32,32,true);
+		if (zeCalc->rotation_axis>-1) {
+			zeCalc->rotateSegments(zeCalc->rotation_axis, zeCalc->rotation_angle);
+			zeCalc->rotateCoordinates(zeCalc->rotation_axis, zeCalc->rotation_angle);
+		}
+
+
+		//zeCalc->printSegments(false);
+		zeCalc->seg2voxel(true);
 		//zeCalc->seg2grid(32,32,32,true);
         //zeCalc->showgrid();
 		//zeCalc->seg2qhull();

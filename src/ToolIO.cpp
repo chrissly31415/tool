@@ -14,13 +14,16 @@ ToolIO::ToolIO() {
 }
 
 void ToolIO::parseCalctype(const char* setupfile) {
+	char buffer[256];
+	cout << "\nCurrent directory: " << getcwd(buffer, 256) << "\n";
+
+	cout << "Open setup file: " << setupfile << endl;
 	ifstream myfile;
 	string line;
 
-	cout << "Open setup file: " << setupfile << endl;
 	myfile.open(setupfile);
 
-	boost::regex type("lj|pp|pol|zernicke", boost::regex::icase);
+	boost::regex type("lj|pp|pol|zernike", boost::regex::icase);
 
 	if (myfile.is_open()) {
 		while (!myfile.eof()) {
@@ -31,29 +34,35 @@ void ToolIO::parseCalctype(const char* setupfile) {
 					toolc::ctype = "PP";
 					cout << "Type of calculation: Empirical Pair potential"
 							<< endl;
+					break;
 				} else if (matches.str() == "LJ" || matches.str() == "lj") {
 					toolc::ctype = "LJ";
 					cout << "Type of calculation: Lennard-Jones potential"
 							<< endl;
-				} else if (matches.str() == "zernicke"
-						|| matches.str() == "ZERNICKE") {
-					toolc::ctype = "ZERNICKE";
-					cout << "Type of calculation: ZERNICKE SHAPE EXPANSION"
+					break;
+				} else if (matches.str() == "zernike"
+						|| matches.str() == "ZERNIKE") {
+					toolc::ctype = "ZERNIKE";
+					cout << "Type of calculation: ZERNIKE SHAPE EXPANSION"
 							<< endl;
+					break;
+				} else {
+					cout << "Unknown calculation type!" << endl;
+					exit(1);
 				}
 			}
 		}
 		myfile.close();
 	} else {
 		cout << "Unable to open file " << setupfile << endl;
-		;
+		exit(1);
 	}
 }
 
 void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 	ifstream myfile;
 	string line;
-	char buffer[256];
+
 	std::string temp;
 	int maxatom = calculation.maxatoms;
 	double lxyz[3 * maxatom];
@@ -83,9 +92,9 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 	boost::regex celldat(
 			"(CELL|cell|Cell)[[:blank:]]+([0-9]{1,}\\.[0-9]*)[[:blank:]]+([0-9]{1,}\\.?[0-9]*)[[:blank:]]+([0-9]{1,}\\.?[0-9]*)");
 	boost::regex coord("COORD|coord|Coord");
-	boost::regex cosmofile(".{1,}\\.cosmo", boost::regex::icase);
+	boost::regex cosmofile(".{1,}\.cosmo", boost::regex::icase);
 	boost::regex coordfile("\\.cosmo|\\.xyz|\\.sdf", boost::regex::icase);
-	boost::regex end("END", boost::regex::icase);
+	boost::regex end("^END$", boost::regex::icase);
 	boost::regex type("LJ|PP|POL", boost::regex::icase);
 	boost::regex at("[A-z|a-z]{1,2}");
 	boost::regex parallel("(par)[[:blank:]]+([0-9]{1,2})", boost::regex::icase);
@@ -100,6 +109,13 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 	boost::regex resets("(resets)[[:blank:]]+([0-9]{1,9})",
 			boost::regex::icase);
 
+	boost::regex rotangle("(rotangle)[[:blank:]]+([0-9]{1,}\\.?[0-9]*)",
+			boost::regex::icase);
+	boost::regex rotaxis("(rotaxis)[[:blank:]]+([0-9]{1,9})",
+			boost::regex::icase);
+	boost::regex voxelstep("(voxelstep)[[:blank:]]+([0-9]{1,}\\.?[0-9]*)",
+			boost::regex::icase);
+
 	//boost::regex cs("[cC|sS]{1}");
 	boost::regex frozen("([F|T]{1})[[:blank:]]+([F|T])[[:blank:]]+([F|T])",
 			boost::regex::icase);
@@ -111,13 +127,14 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 	boost::regex potentials("POTEN", boost::regex::icase);
 	boost::regex potdat(
 			"([A-z|a-z]{1,2})[[:blank:]]+([A-z|a-z]{1,2})[[:blank:]]+(-?[0-9]{1,}\\.?[0-9]*)[[:blank:]]+(-?[0-9]{1,}\\.?[0-9]*)[[:blank:]]+(-?[0-9]{1,}\\.?[0-9]*)[[:blank:]]+(-?[0-9]{1,}\\.?[0-9]*)");
-	cout << "\ndir: " << getcwd(buffer, 256) << "\n";
+
 	bool xyzstart = false;
 	bool specstart = false;
 	bool potstart = false;
 	if (myfile.is_open()) {
 		while (!myfile.eof()) {
 			getline(myfile, line);
+
 			if (boost::starts_with(line, "#"))
 				continue;
 			boost::smatch matches;
@@ -157,6 +174,23 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 				calculation.nr_reset = string2integer(matches[2].str());
 				cout << "Nr. of MC resets: " << calculation.nr_reset << "\n";
 			}
+
+			if (boost::regex_search(line, matches, rotangle)) {
+				calculation.rotation_angle = string2double(matches[2].str());
+				cout << "Rotation angle: " << calculation.rotation_angle
+						<< " degree\n";
+			}
+
+			if (boost::regex_search(line, matches, rotaxis)) {
+				calculation.rotation_axis = string2integer(matches[2].str());
+				cout << "Rotation axis: " << calculation.rotation_axis << "\n";
+			}
+
+			if (boost::regex_search(line, matches, voxelstep)) {
+				calculation.voxelstep = string2double(matches[2].str());
+				cout << "Voxel side length: " << calculation.voxelstep << "\n";
+			}
+
 			//parsing species information
 			if (boost::regex_search(line, matches, species)) {
 
@@ -233,71 +267,85 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 
 			if (boost::regex_search(line, matches, coord)) {
 				xyzstart = true;
-				cout << "Found xyz-section, reading molecular structure...\n";
+				cout
+						<< "Found COORD section, trying to read molecular structure...\n";
 				continue;
 			}
-			if (boost::regex_search(line, matches, end)) {
+			if (boost::regex_search(line, matches, end) && xyzstart) {
 				xyzstart = false;
+				cout
+										<< "End of COORD section.\n";
 			}
 			if (xyzstart) {
-				if (boost::regex_search(line, matches, at)) {
-					//cout << "Found atom " << matches << endl;
-					latoms[countatom] = matches.str();
-					for (int i = 0; i < 87; i++) {
-						if (matches.str() == ToolCalc::elements[i]) {
-							latom_nr[countatom] = i;
-						}
-					}
-					countatom++;
-				}
-				if (boost::regex_search(line, matches, atpos)) {
-					//converting from std::string to char*
-					//matches[0] contains all results
-					lxyz[countpos] = string2double(matches[1].str());
-					countpos++;
-					lxyz[countpos] = string2double(matches[2].str());
-					countpos++;
-					lxyz[countpos] = string2double(matches[3].str());
-					countpos++;
-				}
-				if (boost::regex_search(line, matches, frozen)) {
-					//resetting counter
-					countpos = countpos - 3;
-					temp = matches[1].str();
-					if (temp == "F" || temp == "f") {
-						lmoveMat[countpos] = 0.0;
-					} else {
-						lmoveMat[countpos] = 1.;
-					}
-					countpos++;
-					temp = matches[2].str();
-					if (temp == "F" || temp == "f") {
-						lmoveMat[countpos] = 0.;
-					} else {
-						lmoveMat[countpos] = 1.;
-					}
-					countpos++;
-					temp = matches[3].str();
-					if (temp == "F" || temp == "f") {
-						lmoveMat[countpos] = 0.;
-					} else {
-						lmoveMat[countpos] = 1.;
-					}
-					countpos++;
-				}
+				cout << "XYZ LINE:" << line << endl;
 				if (boost::regex_search(line, matches, cosmofile)) {
+					cout
+							<< "Found COSMO file, trying to read molecular structure...\n";
 					temp = matches[0].str();
-					cout << "Reading coordinates from file: " << matches[0]
-							<< endl;
+					string base_filename = temp.substr(
+							temp.find_last_of("/\\") + 1);
+					std::string::size_type const p(
+							base_filename.find_last_of('.'));
+					std::string file_without_extension = base_filename.substr(0,
+							p);
+
+					calculation.jobname = file_without_extension;
 					parseCOSMO(calculation, temp);
-				}
-				//
+					continue;
+				} else {
+					if (boost::regex_search(line, matches, at)) {
+						//cout << "Found atom " << matches << endl;
+						latoms[countatom] = matches.str();
+						for (int i = 0; i < 87; i++) {
+							if (matches.str() == ToolCalc::elements[i]) {
+								latom_nr[countatom] = i;
+							}
+						}
+						countatom++;
+					}
+					if (boost::regex_search(line, matches, atpos)) {
+						//converting from std::string to char*
+						//matches[0] contains all results
+						lxyz[countpos] = string2double(matches[1].str());
+						countpos++;
+						lxyz[countpos] = string2double(matches[2].str());
+						countpos++;
+						lxyz[countpos] = string2double(matches[3].str());
+						countpos++;
+					}
+					if (boost::regex_search(line, matches, frozen)) {
+						//resetting counter
+						countpos = countpos - 3;
+						temp = matches[1].str();
+						if (temp == "F" || temp == "f") {
+							lmoveMat[countpos] = 0.0;
+						} else {
+							lmoveMat[countpos] = 1.;
+						}
+						countpos++;
+						temp = matches[2].str();
+						if (temp == "F" || temp == "f") {
+							lmoveMat[countpos] = 0.;
+						} else {
+							lmoveMat[countpos] = 1.;
+						}
+						countpos++;
+						temp = matches[3].str();
+						if (temp == "F" || temp == "f") {
+							lmoveMat[countpos] = 0.;
+						} else {
+							lmoveMat[countpos] = 1.;
+						}
+						countpos++;
+					}
+				}//end at / xyz section
 			}
 		}
 		myfile.close();
-	} else
+	} else {
 		cout << "Unable to open file ";
-
+		exit(1);
+	}
 	//in case coordinates have not been defined in file
 	if (calculation.atnumber == 0) {
 		//definition of calculation object
@@ -386,9 +434,18 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 			cout << setw(10) << calculation.paraMat[i][3] << endl;
 		}
 	}
+	if (calculation.atnumber == 0) {
+		cout << "ERROR: No atoms found - parsing of file: " << setupfile
+				<< " not succesfull!\n" << endl;
+		exit(1);
+	} else {
+		cout << "Parsing of file: " << setupfile << " finished.\n" << endl;
+	}
+
 }
 
 void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
+	cout << "Parsing .cosmo file:" << filename << endl;
 	int maxatom = calculation.maxatoms;
 	double lxyz[3 * maxatom];
 	double segment_pos[3 * maxatom * 10];
@@ -403,14 +460,16 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 	string atname = "([A-z|a-z]{1,2})";
 	int pos = 0;
 	int nseg = 0;
+
 	boost::regex atpos_header("\\$coord_rad", boost::regex::icase);
 	boost::regex atpos(atreg + atreg + atreg + atname);
 	boost::regex segment_header("\\$segment_information", boost::regex::icase);
 	boost::regex segments_re(
 			"([0-9]{1,})[[:blank:]]*" + atreg + atreg + atreg + atreg + atreg);
+
 	bool atoms_section = false;
 	bool segment_section = false;
-	cout << "open:" << filename << endl;
+
 	ifstream myfile;
 	string line;
 	myfile.open(filename.c_str());
@@ -456,6 +515,7 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 							matches[i].str())/ANG2BOHR;
 					nseg++;
 				}
+				//cout<<"matches[5].str()"<<matches[5].str()<<endl;
 				sq[nseg / 3] = string2double(matches[5].str());
 				sa[nseg / 3] = string2double(matches[6].str());
 
@@ -464,10 +524,13 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 			}
 
 		}
-	} else
+	} else {
 		cout << "Unable to open file: " << filename << endl;
+		exit(1);
+	}
 	myfile.close();
 
+	//calculation.jobname = "job1";
 	calculation.atnumber = pos / 3;
 
 	calculation.xyz = new ToolCalc::VectorXd(pos);
@@ -484,7 +547,7 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 
 	//segments
 	nseg = nseg / 3;
-	cout << "Number of segments:" << (nseg) << endl;
+	cout << "No. segments:" << (nseg) << endl;
 	calculation.nseg = nseg;
 	calculation.segments = ToolCalc::VectorXd::Zero(nseg * 3);
 	calculation.scharge = ToolCalc::VectorXd::Zero(nseg);
@@ -501,7 +564,7 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 
 	}
 
-	cout << "Parsing .cosmo file - no atoms:" << calculation.atnumber << endl;
+	cout << "No. atoms:" << calculation.atnumber << endl;
 
 }
 
@@ -681,7 +744,7 @@ void ToolIO::printGrad(ToolCalc &calculation) {
 }
 
 //static needs only to be declared in header
-void ToolIO::eigencoord2file(Eigen::MatrixXd coords, const char* filename) {
+void ToolIO::eigencoord2file(Eigen::MatrixXd coords, string filename) {
 	//Eigen::IOFormat NumpyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
 	const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,
 			Eigen::DontAlignCols, ", ", "\n");
@@ -695,7 +758,6 @@ void ToolIO::eigencoord2file(Eigen::MatrixXd coords, const char* filename) {
 //print to file
 void ToolIO::moltoFile(ToolCalc* calculation) {
 	ofstream f;
-	//cout << "being called..."<< endl;
 	f.open("movie.xyz", ios::app);
 	f << " " << calculation->atnumber << endl;
 	if (calculation->calculated == true) {
@@ -707,6 +769,8 @@ void ToolIO::moltoFile(ToolCalc* calculation) {
 			f << setw(12) << calculation->energy << endl;
 		}
 
+	} else {
+		f << endl;
 	}
 	//Ausgabe
 	f.precision(8);
@@ -714,7 +778,7 @@ void ToolIO::moltoFile(ToolCalc* calculation) {
 	for (int i = 0; i < calculation->atnumber * 3; i++) {
 		if (i % 3 == 0) {
 			//somehow i is changed when given here????
-			f << fixed << calculation->atoms[k] << "\t";
+			f << fixed << boost::to_upper_copy(calculation->atoms[k]) << "\t";
 			k++;
 		}
 		//cout << "Positions: " <<endl << *calculation.xyz;

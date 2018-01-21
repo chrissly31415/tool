@@ -29,6 +29,7 @@ public:
 	typedef Eigen::Matrix<int, 1, Eigen::Dynamic> VectorXi;
 	typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 3,Eigen::RowMajor>> EigenCoords;
 
+	string jobname;
 	VectorXd* xyz;
 	VectorXd* grad;
 	//atoms which can move (=1)
@@ -40,6 +41,11 @@ public:
 	VectorXd scharge;
 	VectorXd sarea;
 	int nseg;
+
+	//rotate system for debugging mainly
+	double rotation_angle;
+	int rotation_axis;
+	double voxelstep;
 
 	//properties of calculation
 	int nproc;
@@ -135,6 +141,7 @@ public:
 	void (ToolCalc::*p_E)(bool, bool, bool);
 	void moveRandom(Ran &myRan, double scale = 0.5, double zscale = 0.0);
 	void moveRandomPol(Ran &myRan, double scale = 0.5);
+	void rotateCoordinates(int axis, double phi);
 	void createRandom(Ran &myRan, double radius);
 
 	void opt(bool pol = false, bool verbose = false);
