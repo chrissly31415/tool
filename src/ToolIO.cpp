@@ -115,6 +115,8 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 			boost::regex::icase);
 	boost::regex voxelstep("(voxelstep)[[:blank:]]+([0-9]{1,}\\.?[0-9]*)",
 			boost::regex::icase);
+	boost::regex voxelmode("(voxelmode)[[:blank:]]+([0-9]{1,9})",
+				boost::regex::icase);
 
 	//boost::regex cs("[cC|sS]{1}");
 	boost::regex frozen("([F|T]{1})[[:blank:]]+([F|T])[[:blank:]]+([F|T])",
@@ -190,6 +192,11 @@ void ToolIO::parseSETUP(ToolCalc &calculation, const char* setupfile) {
 				calculation.voxelstep = string2double(matches[2].str());
 				cout << "Voxel side length: " << calculation.voxelstep << "\n";
 			}
+			if (boost::regex_search(line, matches, voxelmode)) {
+							calculation.voxelmode = string2integer(matches[2].str());
+							cout << "Voxelization mode: " << calculation.voxelmode << "\n";
+			}
+
 
 			//parsing species information
 			if (boost::regex_search(line, matches, species)) {
@@ -553,6 +560,9 @@ void ToolIO::parseCOSMO(ToolCalc &calculation, string filename) {
 	calculation.scharge = ToolCalc::VectorXd::Zero(nseg);
 	calculation.sarea = ToolCalc::VectorXd::Zero(nseg);
 	calculation.satom = ToolCalc::VectorXi::Zero(nseg);
+	calculation.maxsig = ToolCalc::VectorXd::Zero(pos / 3);
+	calculation.meansig = ToolCalc::VectorXd::Zero(pos / 3);
+
 	for (int i = 0; i < nseg * 3; i += 3) {
 		calculation.segments(i) = segment_pos[i];
 		calculation.segments(i + 1) = segment_pos[i + 1];

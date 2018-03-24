@@ -40,12 +40,15 @@ public:
 	VectorXi satom;
 	VectorXd scharge;
 	VectorXd sarea;
+	VectorXd maxsig;
+	VectorXd meansig;
 	int nseg;
 
 	//rotate system for debugging mainly
 	double rotation_angle;
-	int rotation_axis;
 	double voxelstep;
+	int voxelmode;
+	int rotation_axis;
 
 	//properties of calculation
 	int nproc;

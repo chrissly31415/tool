@@ -2,6 +2,7 @@
 #define TOOLCALCZE_H_
 
 #include "ToolCalc.h"
+#include "ToolParam.h"
 
 class ToolCalcZE: public ToolCalc {
 public:
@@ -19,6 +20,9 @@ public:
 	void xyz2grid(int a, int b, int c, bool verbose = false);
 	void seg2grid(int a, int b, int c, bool verbose = false);
 	void seg2voxel(bool verbose = false);
+	Eigen::VectorXd voxelize_cosmo(int maxi,int maxj,int maxk, double side_length);
+	Eigen::VectorXd voxelize_cosmo_simple(int maxi,int maxj,int maxk,double side_length);
+	Eigen::VectorXd voxelize_simple(int maxi,int maxj,int maxk,double side_length);
 	void seg2qhull();
 	void showgrid();
 	void gridout();

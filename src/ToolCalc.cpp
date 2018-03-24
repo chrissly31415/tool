@@ -25,9 +25,10 @@ ToolCalc::ToolCalc() {
 	shell_modell = false;
 	scutoff = 0.6;
 	rseed = 123;
-	 rotation_angle=0.0;
-		 rotation_axis=-1;
-		 voxelstep=0.1;
+	rotation_angle = 0.0;
+	rotation_axis = -1;
+	voxelstep = 0.1;
+	voxelmode=0;
 
 }
 //PES
@@ -39,6 +40,7 @@ string ToolCalc::elements[87] = { "X", "H", "He", "Li", "Be", "B", "C", "N",
 		"La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er",
 		"Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
 		"Tl", "Pb", "Bi", "Po", "At", "Rn" };
+
 //atomic masses
 double ToolCalc::emass[87] = { 0.0, 1.0079, 4.00260, 6.941, 9.01218, 10.81,
 		12.011, 14.0067, 16.0, 18.998403, 20.1797, 22.98977, 24.305, 26.98154,
@@ -51,15 +53,6 @@ double ToolCalc::emass[87] = { 0.0, 1.0079, 4.00260, 6.941, 9.01218, 10.81,
 		151.964, 157.25, 158.9254, 162.50, 164.9303, 167.26, 168.9342, 173.04,
 		174.967, 178.49, 180.9479, 183.85, 186.207, 190.23, 192.217, 195.078,
 		196.9665, 200.59, 204.3883, 207.2, 208.9804, 209.0, 210.0, 222.0 };
-
-double ToolCalc::bondiradii[87] = { 120.0, 140.0, 182.0, 153.0, 192.0, 170.0,
-		155.0, 152.0, 147.0, 154.0, 227.0, 173.0, 184.0, 210.0, 180.0, 180.0,
-		175.0, 188.0, 275.0, 231.0, 211.0, 0, 0, 0, 0, 0, 0, 163.0, 140.0,
-		139.0, 187.0, 211.0, 185.0, 190.0, 185.0, 202.0, 303.0, 249.0, 0, 0, 0,
-		0, 0, 0, 0, 163.0, 172.0, 158.0, 193.0, 217.0, 206.0, 206.0, 198.0,
-		216.0, 343.0, 268.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 175.0, 166.0, 155.0, 196.0, 202.0, 207.0, 197.0, 202.0,
-		220.0 };
 
 //makes random move
 void ToolCalc::moveRandom(Ran &myRan, double stepsize, double zscale) {
@@ -112,7 +105,8 @@ void ToolCalc::createRandom(Ran &myRan, double radius) {
 
 //rotate structure
 void ToolCalc::rotateCoordinates(int axis, double phi) {
-	cout << "Rotation of coordinates around axis:"<<axis<<" using phi="<<phi<<"\n";
+	cout << "Rotation of coordinates around axis:" << axis << " using phi="
+			<< phi << "\n";
 
 	phi = phi * 3.14159265 / 180.0;
 	Eigen::MatrixXd R(3, 3);
@@ -126,15 +120,14 @@ void ToolCalc::rotateCoordinates(int axis, double phi) {
 	//rotate atoms
 	double x, y, z;
 	for (int i = 0; i < atnumber; ++i) {
-			x = (*xyz)(3 * i);
-			y = (*xyz)(3 * i + 1);
-			z = (*xyz)(3 * i + 2);
-			(*xyz)(3 * i) = R(0, 0) * x + R(0, 1) * y+ R(0, 2) * z;
-			(*xyz)(3 * i + 1) = R(1, 0) * x + R(1, 1) * y+ R(1, 2) * z;
-			(*xyz)(3 * i + 2) = R(2, 0) * x + R(2, 1) * y+ R(2, 2) * z;
+		x = (*xyz)(3 * i);
+		y = (*xyz)(3 * i + 1);
+		z = (*xyz)(3 * i + 2);
+		(*xyz)(3 * i) = R(0, 0) * x + R(0, 1) * y + R(0, 2) * z;
+		(*xyz)(3 * i + 1) = R(1, 0) * x + R(1, 1) * y + R(1, 2) * z;
+		(*xyz)(3 * i + 2) = R(2, 0) * x + R(2, 1) * y + R(2, 2) * z;
 	}
 }
-
 
 //sets xyz-coordinates
 void ToolCalc::setXYZ(VectorXd xyz_new) {
